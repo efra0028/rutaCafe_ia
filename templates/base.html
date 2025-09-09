@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Cafeterías de Sucre{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'coffee': {
+                            50: '#fdf7f0',
+                            100: '#f9e6d3',
+                            200: '#f2cca5',
+                            300: '#e8a86c',
+                            400: '#de7c3f',
+                            500: '#d65a1a',
+                            600: '#c74a15',
+                            700: '#a53a15',
+                            800: '#842f18',
+                            900: '#6b2816',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navbar -->
+    <nav class="bg-coffee-800 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="{% url 'home' %}" class="flex items-center space-x-2 text-white">
+                        <i class="fas fa-coffee text-2xl"></i>
+                        <span class="text-xl font-bold">Cafeterías Sucre</span>
+                    </a>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'perfil' %}" class="text-white hover:text-coffee-200">
+                            <i class="fas fa-user mr-1"></i>
+                            {{ user.first_name|default:user.username }}
+                        </a>
+                        <a href="{% url 'estadisticas' %}" class="text-white hover:text-coffee-200">
+                            <i class="fas fa-chart-bar mr-1"></i>
+                            Estadísticas
+                        </a>
+                        <a href="{% url 'admin:logout' %}" class="text-white hover:text-coffee-200">
+                            <i class="fas fa-sign-out-alt mr-1"></i>
+                            Salir
+                        </a>
+                    {% else %}
+                        <a href="{% url 'registro' %}" class="bg-coffee-600 hover:bg-coffee-700 text-white px-4 py-2 rounded-lg transition duration-200">
+                            <i class="fas fa-user-plus mr-1"></i>
+                            Registrarse
+                        </a>
+                        <a href="{% url 'admin:login' %}" class="text-white hover:text-coffee-200">
+                            <i class="fas fa-sign-in-alt mr-1"></i>
+                            Iniciar Sesión
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Chatbot Button -->
+    {% if user.is_authenticated %}
+        <div class="fixed bottom-6 right-6 z-50">
+            <button id="chatbot-toggle" class="bg-coffee-600 hover:bg-coffee-700 text-white rounded-full w-16 h-16 shadow-lg transition duration-200 flex items-center justify-center animate-pulse">
+                <i class="fas fa-robot text-xl"></i>
+            </button>
+            <div class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center animate-bounce">
+                <i class="fas fa-exclamation text-xs"></i>
+            </div>
+        </div>
+
+        <!-- Chatbot Modal -->
+        <div id="chatbot-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+            <div class="flex items-center justify-center min-h-screen p-4">
+                <div class="bg-white rounded-lg shadow-xl w-full max-w-md h-96 flex flex-col">
+                    <!-- Chat Header -->
+                    <div class="bg-coffee-600 text-white p-4 rounded-t-lg flex justify-between items-center">
+                        <h3 class="text-lg font-semibold">
+                            <i class="fas fa-robot mr-2"></i>
+                            Asistente de Café
+                        </h3>
+                        <button id="chatbot-close" class="text-white hover:text-coffee-200">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Chat Messages -->
+                    <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-3">
+                        <div class="bg-gray-100 p-3 rounded-lg">
+                            <p class="text-sm text-gray-600">
+                                <i class="fas fa-robot mr-1"></i>
+                                ¡Hola! Soy tu asistente virtual de cafeterías. Te ayudo a crear una ruta personalizada de 4 cafeterías en Sucre. ¿Qué tipo de café te gustaría probar?
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Chat Input -->
+                    <div class="p-4 border-t">
+                        <div class="flex space-x-2">
+                            <input type="text" id="chat-input" placeholder="Escribe tu mensaje..." 
+                                   class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-coffee-500">
+                            <button id="chat-voice" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200" title="Hablar">
+                                <i class="fas fa-microphone"></i>
+                            </button>
+                            <button id="chat-send" class="bg-coffee-600 hover:bg-coffee-700 text-white px-4 py-2 rounded-lg transition duration-200">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                        <div class="mt-2 flex items-center justify-between">
+                            <label class="flex items-center text-sm text-gray-600">
+                                <input type="checkbox" id="voice-response" class="mr-2">
+                                <i class="fas fa-volume-up mr-1"></i>
+                                Respuesta por voz
+                            </label>
+                            <div class="flex items-center space-x-2">
+                                <button id="voice-stop" class="text-red-500 hover:text-red-700 text-sm" title="Detener voz">
+                                    <i class="fas fa-stop"></i>
+                                </button>
+                                <button id="voice-test" class="text-blue-500 hover:text-blue-700 text-sm" title="Probar voz">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mt-1 text-xs text-gray-500">
+                            <span id="voice-status">Voz mejorada activada</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Footer -->
+    <footer class="bg-coffee-800 text-white mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="text-center">
+                <p>&copy; 2024 Cafeterías de Sucre. Descubre los mejores cafés de la ciudad.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Chatbot functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatbotToggle = document.getElementById('chatbot-toggle');
+            const chatbotModal = document.getElementById('chatbot-modal');
+            const chatbotClose = document.getElementById('chatbot-close');
+            const chatInput = document.getElementById('chat-input');
+            const chatSend = document.getElementById('chat-send');
+            const chatMessages = document.getElementById('chat-messages');
+
+            if (chatbotToggle) {
+                chatbotToggle.addEventListener('click', function() {
+                    chatbotModal.classList.remove('hidden');
+                });
+            }
+
+            if (chatbotClose) {
+                chatbotClose.addEventListener('click', function() {
+                    chatbotModal.classList.add('hidden');
+                });
+            }
+
+            function addMessage(content, isUser = false) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = isUser ? 
+                    'bg-coffee-600 text-white p-3 rounded-lg ml-8' : 
+                    'bg-gray-100 p-3 rounded-lg mr-8';
+                
+                const icon = isUser ? 'fas fa-user' : 'fas fa-robot';
+                messageDiv.innerHTML = `<p class="text-sm"><i class="${icon} mr-1"></i>${content}</p>`;
+                
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            // Voice recognition
+            let recognition = null;
+            let isListening = false;
+
+            // Initialize speech recognition
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'es-ES';
+
+                recognition.onstart = function() {
+                    isListening = true;
+                    document.getElementById('chat-voice').innerHTML = '<i class="fas fa-stop"></i>';
+                    document.getElementById('chat-voice').classList.add('bg-red-600', 'hover:bg-red-700');
+                    document.getElementById('chat-voice').classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                };
+
+                recognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript;
+                    chatInput.value = transcript;
+                    sendMessage();
+                };
+
+                recognition.onend = function() {
+                    isListening = false;
+                    document.getElementById('chat-voice').innerHTML = '<i class="fas fa-microphone"></i>';
+                    document.getElementById('chat-voice').classList.add('bg-blue-600', 'hover:bg-blue-700');
+                    document.getElementById('chat-voice').classList.remove('bg-red-600', 'hover:bg-red-700');
+                };
+
+                recognition.onerror = function(event) {
+                    console.error('Speech recognition error:', event.error);
+                    isListening = false;
+                    document.getElementById('chat-voice').innerHTML = '<i class="fas fa-microphone"></i>';
+                    document.getElementById('chat-voice').classList.add('bg-blue-600', 'hover:bg-blue-700');
+                    document.getElementById('chat-voice').classList.remove('bg-red-600', 'hover:bg-red-700');
+                };
+            }
+
+            // Voice synthesis with Amazon Polly (professional quality)
+            let pollyAvailable = false;
+            let availableVoices = [];
+            let currentAudio = null;
+
+            // Cargar voces de Amazon Polly al iniciar
+            function loadPollyVoices() {
+                fetch('/chat/obtener-voces/')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            pollyAvailable = data.polly_available;
+                            availableVoices = data.voices;
+                            console.log('Amazon Polly disponible:', pollyAvailable);
+                            console.log('Voces disponibles:', availableVoices);
+                            
+                            if (pollyAvailable) {
+                                updateVoiceStatus('Amazon Polly activado');
+                            } else {
+                                updateVoiceStatus('Voz del navegador activada');
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error cargando voces:', error);
+                        updateVoiceStatus('Voz del navegador activada');
+                    });
+            }
+
+            function speakText(text) {
+                if (pollyAvailable) {
+                    speakWithPolly(text);
+                } else {
+                    speakWithBrowser(text);
+                }
+            }
+
+            // Usar Amazon Polly para voz profesional
+            function speakWithPolly(text) {
+                updateVoiceStatus('Generando audio profesional...');
+                
+                fetch('/chat/generar-audio/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+                    },
+                    body: JSON.stringify({ text: text })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        playPollyAudio(data.audio);
+                        updateVoiceStatus(`Amazon Polly - ${data.voice_used}`);
+                    } else {
+                        console.warn('Polly falló, usando navegador:', data.error);
+                        speakWithBrowser(text);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error con Polly:', error);
+                    speakWithBrowser(text);
+                });
+            }
+
+            // Reproducir audio de Amazon Polly
+            function playPollyAudio(audioBase64) {
+                try {
+                    // Detener audio anterior
+                    if (currentAudio) {
+                        currentAudio.pause();
+                        currentAudio = null;
+                    }
+
+                    // Crear audio desde base64
+                    const audioData = atob(audioBase64);
+                    const audioBlob = new Blob([audioData], { type: 'audio/mp3' });
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    
+                    currentAudio = new Audio(audioUrl);
+                    
+                    currentAudio.onplay = function() {
+                        updateVoiceStatus('Reproduciendo audio profesional...');
+                    };
+                    
+                    currentAudio.onended = function() {
+                        updateVoiceStatus('Amazon Polly activado');
+                        URL.revokeObjectURL(audioUrl);
+                    };
+                    
+                    currentAudio.onerror = function() {
+                        updateVoiceStatus('Error reproduciendo audio');
+                    };
+                    
+                    currentAudio.play();
+                } catch (error) {
+                    console.error('Error reproduciendo audio Polly:', error);
+                    updateVoiceStatus('Error en audio');
+                }
+            }
+
+            // Usar voz del navegador como fallback
+            function speakWithBrowser(text) {
+                if ('speechSynthesis' in window) {
+                    speechSynthesis.cancel();
+                    
+                    const improvedText = improveTextForSpeech(text);
+                    const utterance = new SpeechSynthesisUtterance(improvedText);
+                    
+                    utterance.lang = 'es-ES';
+                    utterance.rate = 0.85;
+                    utterance.pitch = 1.1;
+                    utterance.volume = 0.9;
+                    
+                    const voices = speechSynthesis.getVoices();
+                    const spanishVoices = voices.filter(voice => 
+                        voice.lang.startsWith('es') && 
+                        (voice.name.includes('female') || 
+                         voice.name.includes('Google') ||
+                         voice.name.includes('Microsoft'))
+                    );
+                    
+                    if (spanishVoices.length > 0) {
+                        const preferredVoice = spanishVoices.find(voice => 
+                            voice.name.includes('Google') || 
+                            voice.name.includes('Microsoft')
+                        ) || spanishVoices[0];
+                        utterance.voice = preferredVoice;
+                    }
+                    
+                    utterance.onstart = function() {
+                        updateVoiceStatus('Voz del navegador...');
+                    };
+                    
+                    utterance.onend = function() {
+                        updateVoiceStatus('Voz del navegador activada');
+                    };
+                    
+                    utterance.onerror = function(event) {
+                        updateVoiceStatus('Error en voz');
+                    };
+                    
+                    speechSynthesis.speak(utterance);
+                }
+            }
+
+            // Actualizar estado de voz
+            function updateVoiceStatus(status) {
+                if (voiceStatus) {
+                    voiceStatus.textContent = status;
+                }
+            }
+            
+            // Mejorar texto para mejor pronunciación
+            function improveTextForSpeech(text) {
+                return text
+                    // Reemplazar emojis con texto
+                    .replace(/☕/g, 'café')
+                    .replace(/👋/g, 'hola')
+                    .replace(/🗺️/g, 'mapa')
+                    .replace(/⭐/g, 'estrella')
+                    .replace(/🎉/g, 'excelente')
+                    .replace(/🤖/g, 'robot')
+                    .replace(/🚀/g, 'genial')
+                    
+                    // Mejorar pronunciación de números
+                    .replace(/\b4\.8\b/g, 'cuatro punto ocho')
+                    .replace(/\b4\.7\b/g, 'cuatro punto siete')
+                    .replace(/\b4\.6\b/g, 'cuatro punto seis')
+                    .replace(/\b4\.5\b/g, 'cuatro punto cinco')
+                    .replace(/\b4\.9\b/g, 'cuatro punto nueve')
+                    
+                    // Agregar pausas naturales
+                    .replace(/\*\*/g, '')  // Remover negritas
+                    .replace(/\n\n/g, '. ')  // Pausa en párrafos
+                    .replace(/\n/g, ', ')   // Pausa en saltos de línea
+                    .replace(/\. /g, '. ')  // Espaciado después de puntos
+                    .replace(/, /g, ', ')   // Espaciado después de comas
+                    
+                    // Mejorar pronunciación de palabras específicas
+                    .replace(/Café/g, 'Café')
+                    .replace(/cappuccino/gi, 'capuchino')
+                    .replace(/latte/gi, 'laté')
+                    .replace(/espresso/gi, 'espréso')
+                    .replace(/mocha/gi, 'móka')
+                    .replace(/macchiato/gi, 'makiáto')
+                    .replace(/frappé/gi, 'frapé')
+                    .replace(/cortado/gi, 'cortádo');
+            }
+            
+            // Cargar voces disponibles al cargar la página
+            function loadVoices() {
+                if ('speechSynthesis' in window) {
+                    const voices = speechSynthesis.getVoices();
+                    console.log('Voces del navegador:', voices.map(v => `${v.name} (${v.lang})`));
+                }
+            }
+            
+            // Cargar voces cuando estén disponibles
+            if ('speechSynthesis' in window) {
+                loadVoices();
+                speechSynthesis.onvoiceschanged = loadVoices;
+            }
+
+            // Cargar voces de Amazon Polly al cargar la página
+            document.addEventListener('DOMContentLoaded', function() {
+                loadPollyVoices();
+            });
+
+            function sendMessage() {
+                const message = chatInput.value.trim();
+                if (!message) return;
+
+                addMessage(message, true);
+                chatInput.value = '';
+
+                // Send to backend
+                fetch('/chat/enviar-mensaje/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+                    },
+                    body: JSON.stringify({ mensaje: message })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        addMessage(data.mensaje_bot);
+                        
+                        // Speak response if enabled
+                        if (document.getElementById('voice-response').checked) {
+                            speakText(data.mensaje_bot);
+                        }
+                        
+                        // If there are recommended cafeterías, show them
+                        if (data.cafeterias_recomendadas && data.cafeterias_recomendadas.length > 0) {
+                            const recomendacionesDiv = document.createElement('div');
+                            recomendacionesDiv.className = 'bg-blue-50 p-3 rounded-lg mr-8 mt-2';
+                            recomendacionesDiv.innerHTML = `
+                                <p class="text-sm font-semibold text-blue-800 mb-2">
+                                    <i class="fas fa-map-marker-alt mr-1"></i>
+                                    Cafeterías Recomendadas:
+                                </p>
+                                <div class="space-y-2">
+                                    ${data.cafeterias_recomendadas.map(cafe => `
+                                        <div class="bg-white p-2 rounded border">
+                                            <p class="font-medium text-sm">${cafe.nombre}</p>
+                                            <p class="text-xs text-gray-600">${cafe.direccion}</p>
+                                            <div class="flex items-center mt-1">
+                                                <div class="flex text-yellow-400">
+                                                    ${'★'.repeat(Math.floor(cafe.calificacion))}
+                                                </div>
+                                                <span class="text-xs text-gray-500 ml-1">${cafe.calificacion}</span>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `;
+                            chatMessages.appendChild(recomendacionesDiv);
+                            chatMessages.scrollTop = chatMessages.scrollHeight;
+                        }
+                    } else {
+                        addMessage('Lo siento, hubo un error. Por favor, inténtalo de nuevo.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    addMessage('Lo siento, hubo un error. Por favor, inténtalo de nuevo.');
+                });
+            }
+
+            if (chatSend) {
+                chatSend.addEventListener('click', sendMessage);
+            }
+
+            if (chatInput) {
+                chatInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        sendMessage();
+                    }
+                });
+            }
+
+            // Voice button
+            const chatVoice = document.getElementById('chat-voice');
+            if (chatVoice && recognition) {
+                chatVoice.addEventListener('click', function() {
+                    if (isListening) {
+                        recognition.stop();
+                    } else {
+                        recognition.start();
+                    }
+                });
+            } else if (chatVoice) {
+                chatVoice.addEventListener('click', function() {
+                    alert('El reconocimiento de voz no está disponible en tu navegador. Usa Chrome o Edge para esta función.');
+                });
+            }
+
+            // Voice controls
+            const voiceStop = document.getElementById('voice-stop');
+            const voiceTest = document.getElementById('voice-test');
+            const voiceStatus = document.getElementById('voice-status');
+
+            if (voiceStop) {
+                voiceStop.addEventListener('click', function() {
+                    speechSynthesis.cancel();
+                    voiceStatus.textContent = 'Voz detenida';
+                    setTimeout(() => {
+                        voiceStatus.textContent = 'Voz mejorada activada';
+                    }, 2000);
+                });
+            }
+
+            if (voiceTest) {
+                voiceTest.addEventListener('click', function() {
+                    const testText = "Hola, soy tu asistente virtual de cafeterías. ¿Cómo suena mi voz?";
+                    speakText(testText);
+                });
+            }
+
+            // Actualizar estado de voz
+            if (voiceStatus) {
+                const voiceCheckbox = document.getElementById('voice-response');
+                if (voiceCheckbox) {
+                    voiceCheckbox.addEventListener('change', function() {
+                        if (this.checked) {
+                            voiceStatus.textContent = 'Voz mejorada activada';
+                        } else {
+                            voiceStatus.textContent = 'Voz desactivada';
+                        }
+                    });
+                }
+            }
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

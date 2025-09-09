@@ -1,0 +1,377 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ cafeteria.nombre }} - Cafeterías de Sucre{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+            <div class="flex-1">
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ cafeteria.nombre }}</h1>
+                <div class="flex items-center mb-4">
+                    <div class="flex text-yellow-400 mr-2">
+                        {% for i in "12345" %}
+                            {% if forloop.counter <= cafeteria.estrellas %}
+                                <i class="fas fa-star"></i>
+                            {% else %}
+                                <i class="far fa-star"></i>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <span class="text-gray-600">({{ cafeteria.calificacion_promedio }}/5 - {{ cafeteria.total_calificaciones }} reseñas)</span>
+                </div>
+                <p class="text-gray-600 mb-4">{{ cafeteria.descripcion }}</p>
+                <div class="flex items-center text-gray-500 mb-2">
+                    <i class="fas fa-map-marker-alt mr-2"></i>
+                    <span>{{ cafeteria.direccion }}</span>
+                </div>
+                {% if cafeteria.telefono %}
+                    <div class="flex items-center text-gray-500 mb-2">
+                        <i class="fas fa-phone mr-2"></i>
+                        <span>{{ cafeteria.telefono }}</span>
+                    </div>
+                {% endif %}
+                <div class="flex items-center text-gray-500">
+                    <i class="fas fa-clock mr-2"></i>
+                    <span>{{ cafeteria.horario_apertura }} - {{ cafeteria.horario_cierre }} ({{ cafeteria.dias_apertura }})</span>
+                </div>
+            </div>
+            <div class="mt-4 md:mt-0 md:ml-6">
+                <button id="me-gusta-btn" 
+                        class="{% if me_gusta %}bg-red-500 hover:bg-red-600{% else %}bg-gray-300 hover:bg-gray-400{% endif %} text-white px-6 py-3 rounded-lg transition duration-200"
+                        data-cafeteria-id="{{ cafeteria.id }}"
+                        data-liked="{{ me_gusta|yesno:'true,false' }}">
+                    <i class="fas fa-heart mr-2"></i>
+                    <span id="me-gusta-text">{% if me_gusta %}Te gusta{% else %}Me gusta{% endif %}</span>
+                    <span id="me-gusta-count">({{ cafeteria.total_me_gusta }})</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Map -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">
+                    <i class="fas fa-map mr-2 text-blue-500"></i>
+                    Ubicación
+                </h2>
+                <div id="map" class="w-full h-64 rounded-lg border border-gray-300"></div>
+            </div>
+        </div>
+
+        <!-- Info Sidebar -->
+        <div class="space-y-6">
+            <!-- Horarios -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">
+                    <i class="fas fa-clock mr-2 text-green-500"></i>
+                    Horarios
+                </h3>
+                <div class="space-y-2">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Apertura:</span>
+                        <span class="font-semibold">{{ cafeteria.horario_apertura }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Cierre:</span>
+                        <span class="font-semibold">{{ cafeteria.horario_cierre }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Días:</span>
+                        <span class="font-semibold">{{ cafeteria.dias_apertura }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">
+                    <i class="fas fa-chart-bar mr-2 text-purple-500"></i>
+                    Estadísticas
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Calificación:</span>
+                        <div class="flex items-center">
+                            <div class="flex text-yellow-400 mr-2">
+                                {% for i in "12345" %}
+                                    {% if forloop.counter <= cafeteria.estrellas %}
+                                        <i class="fas fa-star text-sm"></i>
+                                    {% else %}
+                                        <i class="far fa-star text-sm"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <span class="font-semibold">{{ cafeteria.calificacion_promedio }}</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Me gusta:</span>
+                        <span class="font-semibold text-red-500">{{ cafeteria.total_me_gusta }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Reseñas:</span>
+                        <span class="font-semibold">{{ cafeteria.total_calificaciones }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comentarios -->
+    <div class="bg-white rounded-lg shadow-md p-6 mt-6">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">
+            <i class="fas fa-comments mr-2 text-blue-500"></i>
+            Comentarios y Reseñas
+        </h2>
+
+        <!-- Formulario de comentario -->
+        {% if user.is_authenticated %}
+            <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Agregar tu reseña</h3>
+                <form id="comentario-form" class="space-y-4">
+                    {% csrf_token %}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Calificación</label>
+                        <div class="flex space-x-1" id="rating-stars">
+                            {% for i in "12345" %}
+                                <button type="button" class="star-btn text-2xl text-gray-300 hover:text-yellow-400 transition duration-200" data-rating="{{ forloop.counter }}">
+                                    <i class="far fa-star"></i>
+                                </button>
+                            {% endfor %}
+                        </div>
+                        <input type="hidden" id="rating-input" name="calificacion" value="0">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Comentario</label>
+                        <textarea name="comentario" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500" placeholder="Comparte tu experiencia..."></textarea>
+                    </div>
+                    <button type="submit" class="bg-coffee-600 hover:bg-coffee-700 text-white px-6 py-2 rounded-lg transition duration-200">
+                        <i class="fas fa-paper-plane mr-2"></i>
+                        Enviar Reseña
+                    </button>
+                </form>
+            </div>
+        {% else %}
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <p class="text-blue-800">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    <a href="{% url 'registro' %}" class="underline">Regístrate</a> o 
+                    <a href="{% url 'admin:login' %}" class="underline">inicia sesión</a> para dejar una reseña.
+                </p>
+            </div>
+        {% endif %}
+
+        <!-- Lista de comentarios -->
+        <div id="comentarios-lista" class="space-y-4">
+            {% for comentario in comentarios %}
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-coffee-600 rounded-full flex items-center justify-center text-white font-semibold mr-3">
+                                {{ comentario.usuario.first_name|first|default:comentario.usuario.username|first|upper }}
+                            </div>
+                            <div>
+                                <div class="font-semibold">{{ comentario.usuario.first_name|default:comentario.usuario.username }}</div>
+                                <div class="flex text-yellow-400">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= comentario.calificacion %}
+                                            <i class="fas fa-star text-sm"></i>
+                                        {% else %}
+                                            <i class="far fa-star text-sm"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        <span class="text-sm text-gray-500">{{ comentario.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                    </div>
+                    <p class="text-gray-700">{{ comentario.comentario }}</p>
+                </div>
+            {% empty %}
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-comment-slash text-4xl mb-4"></i>
+                    <p>No hay comentarios aún. ¡Sé el primero en dejar una reseña!</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize map
+    function initMap() {
+        mapboxgl.accessToken = '{{ MAPBOX_ACCESS_TOKEN }}';
+        
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v12',
+            center: [{{ cafeteria.longitud }}, {{ cafeteria.latitud }}], // [lng, lat] para Mapbox
+            zoom: 16
+        });
+
+        // Crear elemento para el marcador personalizado
+        const el = document.createElement('div');
+        el.className = 'marker';
+        el.style.backgroundImage = 'url(data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+            <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="16" cy="16" r="12" fill="#d65a1a" stroke="white" stroke-width="2"/>
+                <text x="16" y="20" text-anchor="middle" fill="white" font-size="16">☕</text>
+            </svg>
+        `) + ')';
+        el.style.width = '32px';
+        el.style.height = '32px';
+        el.style.backgroundSize = 'cover';
+
+        const marker = new mapboxgl.Marker(el)
+            .setLngLat([{{ cafeteria.longitud }}, {{ cafeteria.latitud }}])
+            .addTo(map);
+
+        const popup = new mapboxgl.Popup({ offset: 25 })
+            .setHTML(`
+                <div class="p-2">
+                    <h3 class="font-semibold">{{ cafeteria.nombre }}</h3>
+                    <p class="text-sm text-gray-600">{{ cafeteria.direccion }}</p>
+                </div>
+            `);
+
+        marker.setPopup(popup);
+    }
+
+    // Load Mapbox
+    function loadMapbox() {
+        const script = document.createElement('script');
+        script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
+        script.onload = () => {
+            const link = document.createElement('link');
+            link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
+            link.rel = 'stylesheet';
+            document.head.appendChild(link);
+            
+            // Inicializar mapa cuando Mapbox esté cargado
+            initMap();
+        };
+        document.head.appendChild(script);
+    }
+
+    // Me gusta functionality
+    document.getElementById('me-gusta-btn').addEventListener('click', function() {
+        const cafeteriaId = this.dataset.cafeteriaId;
+        const isLiked = this.dataset.liked === 'true';
+        
+        fetch(`/cafeteria/${cafeteriaId}/me-gusta/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            const btn = document.getElementById('me-gusta-btn');
+            const text = document.getElementById('me-gusta-text');
+            const count = document.getElementById('me-gusta-count');
+            
+            if (data.liked) {
+                btn.className = 'bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg transition duration-200';
+                text.textContent = 'Te gusta';
+            } else {
+                btn.className = 'bg-gray-300 hover:bg-gray-400 text-white px-6 py-3 rounded-lg transition duration-200';
+                text.textContent = 'Me gusta';
+            }
+            
+            count.textContent = `(${data.total_likes})`;
+            btn.dataset.liked = data.liked;
+        });
+    });
+
+    // Rating stars
+    document.querySelectorAll('.star-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const rating = parseInt(this.dataset.rating);
+            document.getElementById('rating-input').value = rating;
+            
+            document.querySelectorAll('.star-btn').forEach((star, index) => {
+                if (index < rating) {
+                    star.innerHTML = '<i class="fas fa-star"></i>';
+                    star.className = 'star-btn text-2xl text-yellow-400 transition duration-200';
+                } else {
+                    star.innerHTML = '<i class="far fa-star"></i>';
+                    star.className = 'star-btn text-2xl text-gray-300 hover:text-yellow-400 transition duration-200';
+                }
+            });
+        });
+    });
+
+    // Comment form
+    document.getElementById('comentario-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const data = {
+            comentario: formData.get('comentario'),
+            calificacion: formData.get('calificacion')
+        };
+        
+        if (!data.comentario || !data.calificacion || data.calificacion === '0') {
+            alert('Por favor, completa todos los campos');
+            return;
+        }
+        
+        fetch(`/cafeteria/{{ cafeteria.id }}/comentario/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Add new comment to the list
+                const comentariosLista = document.getElementById('comentarios-lista');
+                const newComment = document.createElement('div');
+                newComment.className = 'border border-gray-200 rounded-lg p-4';
+                newComment.innerHTML = `
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-coffee-600 rounded-full flex items-center justify-center text-white font-semibold mr-3">
+                                {{ user.first_name|first|default:user.username|first|upper }}
+                            </div>
+                            <div>
+                                <div class="font-semibold">{{ user.first_name|default:user.username }}</div>
+                                <div class="flex text-yellow-400">
+                                    ${'★'.repeat(data.calificacion)}
+                                </div>
+                            </div>
+                        </div>
+                        <span class="text-sm text-gray-500">${data.fecha}</span>
+                    </div>
+                    <p class="text-gray-700">${data.comentario}</p>
+                `;
+                comentariosLista.insertBefore(newComment, comentariosLista.firstChild);
+                
+                // Reset form
+                this.reset();
+                document.getElementById('rating-input').value = '0';
+                document.querySelectorAll('.star-btn').forEach(star => {
+                    star.innerHTML = '<i class="far fa-star"></i>';
+                    star.className = 'star-btn text-2xl text-gray-300 hover:text-yellow-400 transition duration-200';
+                });
+                
+                // Update rating display
+                document.querySelector('.text-gray-600').textContent = `(${data.promedio}/5 - ${data.total_calificaciones} reseñas)`;
+            } else {
+                alert('Error al enviar el comentario');
+            }
+        });
+    });
+
+    // Load maps when page is ready
+    document.addEventListener('DOMContentLoaded', loadMapbox);
+</script>
+{% endblock %}

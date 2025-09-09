@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ recorrido_usuario.recorrido.nombre }} - Mi Recorrido{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <!-- Header del Recorrido -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+            <div class="flex-1">
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-route text-green-600 mr-2"></i>
+                    {{ recorrido_usuario.recorrido.nombre }}
+                </h1>
+                <p class="text-gray-600 mb-4">{{ recorrido_usuario.recorrido.descripcion }}</p>
+                <div class="flex items-center space-x-6 text-sm text-gray-500">
+                    <span><i class="fas fa-clock mr-1"></i>{{ recorrido_usuario.recorrido.duracion_estimada }} min</span>
+                    <span><i class="fas fa-route mr-1"></i>{{ recorrido_usuario.recorrido.distancia_total }} km</span>
+                    <span><i class="fas fa-coffee mr-1"></i>{{ cafeterias.count }} cafeterías</span>
+                </div>
+            </div>
+            <div class="mt-4 md:mt-0">
+                <div class="bg-gray-100 rounded-lg p-4">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-gray-800">
+                            {{ recorrido_usuario.cafeterias_visitadas.count }}/{{ cafeterias.count }}
+                        </div>
+                        <div class="text-sm text-gray-600">Cafeterías visitadas</div>
+                        <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+                            <div class="bg-green-500 h-2 rounded-full" style="width: {% widthratio recorrido_usuario.cafeterias_visitadas.count cafeterias.count 100 %}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Lista de Cafeterías -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">
+                    <i class="fas fa-list mr-2 text-blue-500"></i>
+                    Cafeterías del Recorrido
+                </h2>
+                <div class="space-y-3">
+                    {% for cafeteria in cafeterias %}
+                        <div class="border border-gray-200 rounded-lg p-4 {% if cafeteria in recorrido_usuario.cafeterias_visitadas.all %}bg-green-50 border-green-200{% endif %}">
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="font-semibold">{{ cafeteria.nombre }}</h3>
+                                {% if cafeteria in recorrido_usuario.cafeterias_visitadas.all %}
+                                    <span class="bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+                                        <i class="fas fa-check mr-1"></i>Visitada
+                                    </span>
+                                {% else %}
+                                    <span class="bg-gray-300 text-gray-600 text-xs px-2 py-1 rounded-full">
+                                        <i class="fas fa-clock mr-1"></i>Pendiente
+                                    </span>
+                                {% endif %}
+                            </div>
+                            <p class="text-sm text-gray-600 mb-2">{{ cafeteria.direccion }}</p>
+                            <div class="flex items-center justify-between text-sm">
+                                <div class="flex text-yellow-400">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= cafeteria.estrellas %}
+                                            <i class="fas fa-star text-xs"></i>
+                                        {% else %}
+                                            <i class="far fa-star text-xs"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <span class="text-gray-500">{{ cafeteria.calificacion_promedio }}</span>
+                            </div>
+                            {% if cafeteria not in recorrido_usuario.cafeterias_visitadas.all %}
+                                <button onclick="marcarVisitada({{ cafeteria.id }})" 
+                                        class="mt-2 w-full bg-coffee-600 hover:bg-coffee-700 text-white text-sm py-2 px-3 rounded-lg transition duration-200">
+                                    <i class="fas fa-check mr-1"></i>
+                                    Marcar como Visitada
+                                </button>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Mapa -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">
+                    <i class="fas fa-map mr-2 text-green-500"></i>
+                    Mapa del Recorrido
+                </h2>
+                <div id="map" class="w-full h-96 rounded-lg border border-gray-300"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progreso del Recorrido -->
+    <div class="bg-white rounded-lg shadow-md p-6 mt-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">
+            <i class="fas fa-chart-line mr-2 text-purple-500"></i>
+            Progreso del Recorrido
+        </h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="text-center">
+                <div class="text-3xl font-bold text-blue-600 mb-2">
+                    {{ recorrido_usuario.cafeterias_visitadas.count }}
+                </div>
+                <div class="text-gray-600">Cafeterías Visitadas</div>
+            </div>
+            <div class="text-center">
+                <div class="text-3xl font-bold text-green-600 mb-2">
+                    {{ cafeterias.count|add:"-"|add:recorrido_usuario.cafeterias_visitadas.count }}
+                </div>
+                <div class="text-gray-600">Restantes</div>
+            </div>
+            <div class="text-center">
+                <div class="text-3xl font-bold text-purple-600 mb-2">
+                    {% widthratio recorrido_usuario.cafeterias_visitadas.count cafeterias.count 100 %}%
+                </div>
+                <div class="text-gray-600">Completado</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let map;
+
+    function initMap() {
+        mapboxgl.accessToken = '{{ MAPBOX_ACCESS_TOKEN }}';
+        
+        map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v12',
+            center: [-65.2595, -19.0478], // [lng, lat] para Mapbox
+            zoom: 14
+        });
+
+        // Agregar marcadores para las cafeterías
+        const cafeterias = [
+            {% for cafeteria in cafeterias %}
+                {
+                    id: {{ cafeteria.id }},
+                    nombre: "{{ cafeteria.nombre }}",
+                    direccion: "{{ cafeteria.direccion }}",
+                    lat: {{ cafeteria.latitud }},
+                    lng: {{ cafeteria.longitud }},
+                    visitada: {% if cafeteria in recorrido_usuario.cafeterias_visitadas.all %}true{% else %}false{% endif %}
+                }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        cafeterias.forEach((cafe, index) => {
+            // Crear elemento para el marcador personalizado
+            const el = document.createElement('div');
+            el.className = 'marker';
+            el.style.backgroundImage = 'url(data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="16" cy="16" r="12" fill="${cafe.visitada ? '#10b981' : '#d65a1a'}" stroke="white" stroke-width="2"/>
+                    <text x="16" y="20" text-anchor="middle" fill="white" font-size="16">${cafe.visitada ? '✓' : '☕'}</text>
+                </svg>
+            `) + ')';
+            el.style.width = '32px';
+            el.style.height = '32px';
+            el.style.backgroundSize = 'cover';
+
+            const marker = new mapboxgl.Marker(el)
+                .setLngLat([cafe.lng, cafe.lat])
+                .addTo(map);
+
+            const popup = new mapboxgl.Popup({ offset: 25 })
+                .setHTML(`
+                    <div class="p-2">
+                        <h3 class="font-semibold">${cafe.nombre}</h3>
+                        <p class="text-sm text-gray-600">${cafe.direccion}</p>
+                        <p class="text-sm ${cafe.visitada ? 'text-green-600' : 'text-orange-600'}">
+                            ${cafe.visitada ? '✓ Visitada' : '⏳ Pendiente'}
+                        </p>
+                    </div>
+                `);
+
+            marker.setPopup(popup);
+        });
+
+        // Dibujar ruta si hay cafeterías
+        if (cafeterias.length > 0) {
+            const coordinates = cafeterias.map(cafe => [cafe.lng, cafe.lat]);
+
+            // Agregar fuente de datos para la ruta
+            if (map.getSource('route')) {
+                map.removeLayer('route');
+                map.removeSource('route');
+            }
+
+            map.addSource('route', {
+                'type': 'geojson',
+                'data': {
+                    'type': 'Feature',
+                    'properties': {},
+                    'geometry': {
+                        'type': 'LineString',
+                        'coordinates': coordinates
+                    }
+                }
+            });
+
+            // Agregar capa de línea para la ruta
+            map.addLayer({
+                'id': 'route',
+                'type': 'line',
+                'source': 'route',
+                'layout': {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                },
+                'paint': {
+                    'line-color': '#d65a1a',
+                    'line-width': 4
+                }
+            });
+        }
+    }
+
+    function marcarVisitada(cafeteriaId) {
+        fetch(`/mi-recorrido/{{ recorrido_usuario.id }}/visitar/${cafeteriaId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.completado) {
+                alert('¡Felicidades! Has completado el recorrido');
+                location.reload();
+            } else {
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al marcar como visitada');
+        });
+    }
+
+    // Load Mapbox
+    function loadMapbox() {
+        const script = document.createElement('script');
+        script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
+        script.onload = () => {
+            const link = document.createElement('link');
+            link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
+            link.rel = 'stylesheet';
+            document.head.appendChild(link);
+            
+            // Inicializar mapa cuando Mapbox esté cargado
+            initMap();
+        };
+        document.head.appendChild(script);
+    }
+
+    document.addEventListener('DOMContentLoaded', loadMapbox);
+</script>
+{% endblock %}

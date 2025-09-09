@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+
+{% block title %}Mi Perfil - Cafeterías de Sucre{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-lg shadow-md p-8">
+        <div class="text-center mb-8">
+            <div class="w-24 h-24 bg-coffee-600 rounded-full flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4">
+                {{ user.first_name|first|default:user.username|first|upper }}
+            </div>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">
+                <i class="fas fa-user text-coffee-600 mr-2"></i>
+                Mi Perfil
+            </h1>
+            <p class="text-gray-600">Gestiona tu información personal y preferencias</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Información Personal -->
+            <div class="space-y-6">
+                <h2 class="text-xl font-bold text-gray-800 border-b border-gray-200 pb-2">
+                    <i class="fas fa-user-circle mr-2 text-blue-500"></i>
+                    Información Personal
+                </h2>
+                
+                <div class="space-y-4">
+                    <div class="flex items-center">
+                        <i class="fas fa-user w-5 text-gray-500 mr-3"></i>
+                        <div>
+                            <p class="text-sm text-gray-500">Nombre completo</p>
+                            <p class="font-semibold">{{ user.first_name }} {{ user.last_name }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <i class="fas fa-at w-5 text-gray-500 mr-3"></i>
+                        <div>
+                            <p class="text-sm text-gray-500">Usuario</p>
+                            <p class="font-semibold">{{ user.username }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <i class="fas fa-envelope w-5 text-gray-500 mr-3"></i>
+                        <div>
+                            <p class="text-sm text-gray-500">Email</p>
+                            <p class="font-semibold">{{ user.email }}</p>
+                        </div>
+                    </div>
+                    
+                    {% if user.perfilusuario %}
+                        <div class="flex items-center">
+                            <i class="fas fa-venus-mars w-5 text-gray-500 mr-3"></i>
+                            <div>
+                                <p class="text-sm text-gray-500">Género</p>
+                                <p class="font-semibold">{{ user.perfilusuario.get_genero_display }}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center">
+                            <i class="fas fa-birthday-cake w-5 text-gray-500 mr-3"></i>
+                            <div>
+                                <p class="text-sm text-gray-500">Edad</p>
+                                <p class="font-semibold">{{ user.perfilusuario.edad }} años</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center">
+                            <i class="fas fa-city w-5 text-gray-500 mr-3"></i>
+                            <div>
+                                <p class="text-sm text-gray-500">Ciudad</p>
+                                <p class="font-semibold">{{ user.perfilusuario.ciudad }}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center">
+                            <i class="fas fa-flag w-5 text-gray-500 mr-3"></i>
+                            <div>
+                                <p class="text-sm text-gray-500">País</p>
+                                <p class="font-semibold">{{ user.perfilusuario.pais }}</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Editar Perfil -->
+            <div>
+                <h2 class="text-xl font-bold text-gray-800 border-b border-gray-200 pb-2 mb-6">
+                    <i class="fas fa-edit mr-2 text-green-500"></i>
+                    Editar Perfil
+                </h2>
+                
+                <form method="post" class="space-y-4">
+                    {% csrf_token %}
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Género</label>
+                        {{ form.genero }}
+                        {% if form.genero.errors %}
+                            <div class="text-red-500 text-sm mt-1">{{ form.genero.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Edad</label>
+                        {{ form.edad }}
+                        {% if form.edad.errors %}
+                            <div class="text-red-500 text-sm mt-1">{{ form.edad.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Ciudad</label>
+                        {{ form.ciudad }}
+                        {% if form.ciudad.errors %}
+                            <div class="text-red-500 text-sm mt-1">{{ form.ciudad.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">País</label>
+                        {{ form.pais }}
+                        {% if form.pais.errors %}
+                            <div class="text-red-500 text-sm mt-1">{{ form.pais.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-coffee-600 hover:bg-coffee-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200">
+                        <i class="fas fa-save mr-2"></i>
+                        Actualizar Perfil
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Estadísticas del Usuario -->
+        <div class="mt-8 pt-8 border-t border-gray-200">
+            <h2 class="text-xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-chart-line mr-2 text-purple-500"></i>
+                Mis Estadísticas
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-blue-50 rounded-lg p-4 text-center">
+                    <div class="text-2xl font-bold text-blue-600 mb-2">
+                        <i class="fas fa-route"></i>
+                    </div>
+                    <div class="text-sm text-gray-600">Recorridos Iniciados</div>
+                    <div class="text-lg font-semibold text-blue-800">0</div>
+                </div>
+                
+                <div class="bg-green-50 rounded-lg p-4 text-center">
+                    <div class="text-2xl font-bold text-green-600 mb-2">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="text-sm text-gray-600">Recorridos Completados</div>
+                    <div class="text-lg font-semibold text-green-800">0</div>
+                </div>
+                
+                <div class="bg-yellow-50 rounded-lg p-4 text-center">
+                    <div class="text-2xl font-bold text-yellow-600 mb-2">
+                        <i class="fas fa-coffee"></i>
+                    </div>
+                    <div class="text-sm text-gray-600">Cafeterías Visitadas</div>
+                    <div class="text-lg font-semibold text-yellow-800">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    input, select {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 0.5rem;
+        font-size: 1rem;
+        transition: border-color 0.2s;
+    }
+
+    input:focus, select:focus {
+        outline: none;
+        border-color: #d65a1a;
+        box-shadow: 0 0 0 3px rgba(214, 90, 26, 0.1);
+    }
+</style>
+{% endblock %}

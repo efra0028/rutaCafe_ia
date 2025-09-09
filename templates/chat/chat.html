@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}Chat - Asistente de Café{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="bg-white rounded-lg shadow-md h-[70vh] flex flex-col">
+        <div class="bg-coffee-600 text-white p-4 rounded-t-lg flex items-center justify-between">
+            <h1 class="text-lg font-semibold"><i class="fas fa-robot mr-2"></i>Asistente de Café</h1>
+            <a href="{% url 'nueva_conversacion' %}" class="text-white text-sm underline">Nueva conversación</a>
+        </div>
+        <div id="chat-body" class="flex-1 p-4 overflow-y-auto space-y-3">
+            {% for m in mensajes %}
+                <div class="{{ 'bg-coffee-600 text-white ml-8' if m.tipo == 'U' else 'bg-gray-100 mr-8' }} p-3 rounded-lg">
+                    <p class="text-sm">
+                        <i class="{{ 'fas fa-user' if m.tipo == 'U' else 'fas fa-robot' }} mr-1"></i>
+                        {{ m.contenido }}
+                    </p>
+                </div>
+            {% endfor %}
+        </div>
+        <div class="p-4 border-t">
+            <div class="flex space-x-2">
+                <input id="msg" type="text" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-coffee-500" placeholder="Escribe tu mensaje...">
+                <button id="send" class="bg-coffee-600 hover:bg-coffee-700 text-white px-4 py-2 rounded-lg"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const bodyEl = document.getElementById('chat-body');
+    const msgEl = document.getElementById('msg');
+    const sendEl = document.getElementById('send');
+
+    function addMsg(text, user) {
+        const div = document.createElement('div');
+        div.className = (user ? 'bg-coffee-600 text-white ml-8' : 'bg-gray-100 mr-8') + ' p-3 rounded-lg';
+        div.innerHTML = `<p class="text-sm"><i class="${user ? 'fas fa-user' : 'fas fa-robot'} mr-1"></i>${text}</p>`;
+        bodyEl.appendChild(div);
+        bodyEl.scrollTop = bodyEl.scrollHeight;
+    }
+
+    function send() {
+        const text = msgEl.value.trim();
+        if (!text) return;
+        addMsg(text, true);
+        msgEl.value = '';
+        fetch('{% url 'enviar_mensaje' %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+            },
+            body: JSON.stringify({ mensaje: text })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                addMsg(data.mensaje_bot, false);
+            } else {
+                addMsg('Error enviando mensaje', false);
+            }
+        })
+        .catch(() => addMsg('Error de red', false));
+    }
+
+    sendEl.addEventListener('click', send);
+    msgEl.addEventListener('keypress', e => { if (e.key === 'Enter') send(); });
+</script>
+{% endblock %}
+
