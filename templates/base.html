@@ -142,14 +142,17 @@
                                 <i class="fas fa-volume-up mr-1"></i>
                                 Respuesta por voz
                             </label>
-                            <div class="flex items-center space-x-2">
-                                <button id="voice-stop" class="text-red-500 hover:text-red-700 text-sm" title="Detener voz">
-                                    <i class="fas fa-stop"></i>
-                                </button>
-                                <button id="voice-test" class="text-blue-500 hover:text-blue-700 text-sm" title="Probar voz">
-                                    <i class="fas fa-play"></i>
-                                </button>
-                            </div>
+                <div class="flex items-center space-x-2">
+                    <button id="voice-stop" class="text-red-500 hover:text-red-700 text-sm" title="Detener voz">
+                        <i class="fas fa-stop"></i>
+                    </button>
+                    <button id="voice-test" class="text-blue-500 hover:text-blue-700 text-sm" title="Probar voz">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    <button id="voice-debug" class="text-green-500 hover:text-green-700 text-sm" title="Debug voz">
+                        <i class="fas fa-bug"></i>
+                    </button>
+                </div>
                         </div>
                         <div class="mt-1 text-xs text-gray-500">
                             <span id="voice-status">Voz mejorada activada</span>
@@ -249,41 +252,61 @@
             let pollyAvailable = false;
             let availableVoices = [];
             let currentAudio = null;
+            
+            // Verificar si Polly está disponible al cargar
+            console.log('🔊 Inicializando sistema de voz...');
 
             // Cargar voces de Amazon Polly al iniciar
             function loadPollyVoices() {
+                console.log('🔊 Cargando voces de Amazon Polly...');
                 fetch('/chat/obtener-voces/')
-                    .then(response => response.json())
+                    .then(response => {
+                        console.log('📡 Respuesta de voces:', response.status);
+                        return response.json();
+                    })
                     .then(data => {
+                        console.log('📊 Datos recibidos:', data);
                         if (data.success) {
                             pollyAvailable = data.polly_available;
                             availableVoices = data.voices;
-                            console.log('Amazon Polly disponible:', pollyAvailable);
-                            console.log('Voces disponibles:', availableVoices);
+                            console.log('✅ Amazon Polly disponible:', pollyAvailable);
+                            console.log('🎤 Voces disponibles:', availableVoices);
                             
                             if (pollyAvailable) {
                                 updateVoiceStatus('Amazon Polly activado');
+                                console.log('🎉 Polly configurado correctamente');
                             } else {
                                 updateVoiceStatus('Voz del navegador activada');
+                                console.log('⚠️ Polly no disponible, usando navegador');
                             }
+                        } else {
+                            console.log('❌ Error en respuesta de voces:', data);
+                            updateVoiceStatus('Voz del navegador activada');
                         }
                     })
                     .catch(error => {
-                        console.error('Error cargando voces:', error);
+                        console.error('❌ Error cargando voces:', error);
                         updateVoiceStatus('Voz del navegador activada');
                     });
             }
 
             function speakText(text) {
+                console.log('🔊 speakText llamado con:', text.substring(0, 50));
+                console.log('🔊 pollyAvailable:', pollyAvailable);
+                
+                // Intentar Polly primero, fallback a navegador
                 if (pollyAvailable) {
+                    console.log('🎤 Intentando Amazon Polly...');
                     speakWithPolly(text);
                 } else {
+                    console.log('🌐 Polly no disponible, usando voz del navegador');
                     speakWithBrowser(text);
                 }
             }
 
             // Usar Amazon Polly para voz profesional
             function speakWithPolly(text) {
+                console.log('🎤 Iniciando Polly con texto:', text.substring(0, 50));
                 updateVoiceStatus('Generando audio profesional...');
                 
                 fetch('/chat/generar-audio/', {
@@ -294,100 +317,227 @@
                     },
                     body: JSON.stringify({ text: text })
                 })
-                .then(response => response.json())
+                .then(response => {
+                    console.log('📡 Respuesta Polly:', response.status);
+                    return response.json();
+                })
                 .then(data => {
+                    console.log('📊 Datos Polly:', data);
                     if (data.success) {
+                        console.log('✅ Audio generado con Polly, tamaño:', data.audio ? data.audio.length : 'N/A');
                         playPollyAudio(data.audio);
                         updateVoiceStatus(`Amazon Polly - ${data.voice_used}`);
                     } else {
-                        console.warn('Polly falló, usando navegador:', data.error);
+                        console.warn('❌ Polly falló, usando navegador:', data.error);
                         speakWithBrowser(text);
                     }
                 })
                 .catch(error => {
-                    console.error('Error con Polly:', error);
+                    console.error('❌ Error con Polly:', error);
                     speakWithBrowser(text);
                 });
             }
 
+            // Utilidades de audio/base64
+            function base64ToUint8Array(base64) {
+                const binaryString = atob(base64);
+                const len = binaryString.length;
+                const bytes = new Uint8Array(len);
+                for (let i = 0; i < len; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                return bytes;
+            }
+
             // Reproducir audio de Amazon Polly
             function playPollyAudio(audioBase64) {
+                console.log('🎵 Reproduciendo audio Polly, tamaño:', audioBase64 ? audioBase64.length : 'N/A');
                 try {
                     // Detener audio anterior
                     if (currentAudio) {
+                        console.log('⏹️ Deteniendo audio anterior');
                         currentAudio.pause();
                         currentAudio = null;
                     }
 
-                    // Crear audio desde base64
-                    const audioData = atob(audioBase64);
-                    const audioBlob = new Blob([audioData], { type: 'audio/mp3' });
+                    // Crear audio desde base64 (bytes reales)
+                    console.log('🔄 Convirtiendo base64 a bytes...');
+                    const byteArray = base64ToUint8Array(audioBase64);
+                    const audioBlob = new Blob([byteArray], { type: 'audio/mpeg' });
                     const audioUrl = URL.createObjectURL(audioBlob);
                     
+                    console.log('🎧 Creando elemento Audio...');
                     currentAudio = new Audio(audioUrl);
                     
+                    // Configurar eventos
+                    currentAudio.onloadstart = function() {
+                        console.log('📥 Cargando audio...');
+                    };
+                    
+                    currentAudio.oncanplay = function() {
+                        console.log('✅ Audio listo para reproducir');
+                    };
+                    
                     currentAudio.onplay = function() {
+                        console.log('▶️ Audio iniciado');
                         updateVoiceStatus('Reproduciendo audio profesional...');
                     };
                     
                     currentAudio.onended = function() {
+                        console.log('⏹️ Audio terminado');
                         updateVoiceStatus('Amazon Polly activado');
                         URL.revokeObjectURL(audioUrl);
                     };
                     
-                    currentAudio.onerror = function() {
-                        updateVoiceStatus('Error reproduciendo audio');
+                    currentAudio.onerror = function(event) {
+                        console.error('❌ Error en audio Polly:', event);
+                        console.log('🔄 Cambiando a voz del navegador...');
+                        updateVoiceStatus('Usando voz del navegador...');
+                        // Fallback a voz del navegador
+                        speakWithBrowser(text);
                     };
                     
-                    currentAudio.play();
+                    currentAudio.onstalled = function() {
+                        console.log('⚠️ Audio estancado, reintentando...');
+                    };
+                    
+                    currentAudio.onabort = function() {
+                        console.log('⚠️ Audio abortado');
+                    };
+                    
+                    // Configurar audio
+                    currentAudio.volume = 1.0;
+                    currentAudio.preload = 'auto';
+                    
+                    console.log('🚀 Iniciando reproducción...');
+                    
+                    // Intentar reproducir con timeout
+                    const playPromise = currentAudio.play();
+                    
+                    if (playPromise !== undefined) {
+                        playPromise.then(() => {
+                            console.log('✅ Audio reproducido exitosamente');
+                        }).catch(error => {
+                            console.error('❌ Error al reproducir Polly:', error);
+                            console.log('🔄 Cambiando a voz del navegador...');
+                            updateVoiceStatus('Usando voz del navegador...');
+                            // Fallback a voz del navegador
+                            speakWithBrowser(text);
+                        });
+                    }
+                    
+                    // Timeout de seguridad
+                    setTimeout(() => {
+                        if (currentAudio && currentAudio.paused) {
+                            console.log('⚠️ Audio no se reprodujo en 3 segundos, usando fallback');
+                            updateVoiceStatus('Usando voz del navegador...');
+                            speakWithBrowser(text);
+                        }
+                    }, 3000);
+                    
                 } catch (error) {
-                    console.error('Error reproduciendo audio Polly:', error);
+                    console.error('❌ Error reproduciendo audio Polly:', error);
                     updateVoiceStatus('Error en audio');
+                    speakWithBrowser(text);
                 }
             }
 
-            // Usar voz del navegador como fallback
+            // Usar voz del navegador (versión robusta)
             function speakWithBrowser(text) {
-                if ('speechSynthesis' in window) {
-                    speechSynthesis.cancel();
+                console.log('🌐 Iniciando voz del navegador...');
+                
+                if (!('speechSynthesis' in window)) {
+                    console.error('❌ Speech Synthesis no disponible en este navegador');
+                    updateVoiceStatus('Voz no disponible');
+                    return;
+                }
+                
+                // Cancelar cualquier audio anterior
+                speechSynthesis.cancel();
+                
+                // Mejorar el texto para mejor pronunciación
+                const improvedText = improveTextForSpeech(text);
+                console.log('📝 Texto mejorado:', improvedText.substring(0, 50));
+                
+                // Crear utterance
+                const utterance = new SpeechSynthesisUtterance(improvedText);
+                
+                // Configuración básica
+                utterance.lang = 'es-ES';
+                utterance.rate = 0.9;
+                utterance.pitch = 1.0;
+                utterance.volume = 1.0;
+                
+                // Obtener voces disponibles
+                const voices = speechSynthesis.getVoices();
+                console.log('🎤 Total de voces:', voices.length);
+                
+                // Buscar voces en español
+                const spanishVoices = voices.filter(voice => 
+                    voice.lang.startsWith('es') || 
+                    voice.lang.includes('Spanish') ||
+                    voice.name.toLowerCase().includes('spanish')
+                );
+                
+                console.log('🇪🇸 Voces en español encontradas:', spanishVoices.length);
+                
+                // Seleccionar la mejor voz
+                if (spanishVoices.length > 0) {
+                    // Priorizar voces de calidad
+                    const preferredVoice = spanishVoices.find(voice => 
+                        voice.name.includes('Google') || 
+                        voice.name.includes('Microsoft') ||
+                        voice.name.includes('female') ||
+                        voice.name.includes('Female')
+                    ) || spanishVoices[0];
                     
-                    const improvedText = improveTextForSpeech(text);
-                    const utterance = new SpeechSynthesisUtterance(improvedText);
-                    
-                    utterance.lang = 'es-ES';
-                    utterance.rate = 0.85;
-                    utterance.pitch = 1.1;
-                    utterance.volume = 0.9;
-                    
-                    const voices = speechSynthesis.getVoices();
-                    const spanishVoices = voices.filter(voice => 
-                        voice.lang.startsWith('es') && 
-                        (voice.name.includes('female') || 
-                         voice.name.includes('Google') ||
-                         voice.name.includes('Microsoft'))
-                    );
-                    
-                    if (spanishVoices.length > 0) {
-                        const preferredVoice = spanishVoices.find(voice => 
-                            voice.name.includes('Google') || 
-                            voice.name.includes('Microsoft')
-                        ) || spanishVoices[0];
-                        utterance.voice = preferredVoice;
-                    }
-                    
-                    utterance.onstart = function() {
-                        updateVoiceStatus('Voz del navegador...');
-                    };
-                    
-                    utterance.onend = function() {
-                        updateVoiceStatus('Voz del navegador activada');
-                    };
-                    
-                    utterance.onerror = function(event) {
-                        updateVoiceStatus('Error en voz');
-                    };
-                    
+                    utterance.voice = preferredVoice;
+                    console.log('🎯 Voz seleccionada:', preferredVoice.name, '(' + preferredVoice.lang + ')');
+                } else {
+                    console.log('⚠️ No hay voces en español, usando voz por defecto');
+                }
+                
+                // Event listeners
+                utterance.onstart = function() {
+                    console.log('▶️ Voz iniciada correctamente');
+                    updateVoiceStatus('Reproduciendo...');
+                };
+                
+                utterance.onend = function() {
+                    console.log('⏹️ Voz terminada correctamente');
+                    updateVoiceStatus('Voz del navegador activada');
+                };
+                
+                utterance.onerror = function(event) {
+                    console.error('❌ Error en voz:', event.error, event);
+                    updateVoiceStatus('Error en voz: ' + event.error);
+                };
+                
+                utterance.onpause = function() {
+                    console.log('⏸️ Voz pausada');
+                };
+                
+                utterance.onresume = function() {
+                    console.log('▶️ Voz reanudada');
+                };
+                
+                // Intentar reproducir
+                try {
+                    console.log('🚀 Iniciando reproducción...');
                     speechSynthesis.speak(utterance);
+                    
+                    // Verificar si se está reproduciendo después de un breve delay
+                    setTimeout(() => {
+                        if (speechSynthesis.speaking) {
+                            console.log('✅ Voz reproduciéndose correctamente');
+                        } else {
+                            console.log('⚠️ Voz no se está reproduciendo, puede ser un problema de permisos');
+                        }
+                    }, 100);
+                    
+                } catch (error) {
+                    console.error('❌ Error al iniciar reproducción:', error);
+                    updateVoiceStatus('Error al reproducir');
                 }
             }
 
@@ -409,6 +559,9 @@
                     .replace(/🎉/g, 'excelente')
                     .replace(/🤖/g, 'robot')
                     .replace(/🚀/g, 'genial')
+                    .replace(/💡/g, 'idea')
+                    .replace(/🎯/g, 'objetivo')
+                    .replace(/📱/g, 'teléfono')
                     
                     // Mejorar pronunciación de números
                     .replace(/\b4\.8\b/g, 'cuatro punto ocho')
@@ -416,23 +569,36 @@
                     .replace(/\b4\.6\b/g, 'cuatro punto seis')
                     .replace(/\b4\.5\b/g, 'cuatro punto cinco')
                     .replace(/\b4\.9\b/g, 'cuatro punto nueve')
+                    .replace(/\b5\.0\b/g, 'cinco punto cero')
                     
-                    // Agregar pausas naturales
+                    // Limpiar formato
                     .replace(/\*\*/g, '')  // Remover negritas
-                    .replace(/\n\n/g, '. ')  // Pausa en párrafos
-                    .replace(/\n/g, ', ')   // Pausa en saltos de línea
-                    .replace(/\. /g, '. ')  // Espaciado después de puntos
-                    .replace(/, /g, ', ')   // Espaciado después de comas
+                    .replace(/\*/g, '')    // Remover asteriscos
+                    .replace(/#/g, '')     // Remover hashtags
+                    
+                    // Mejorar pausas
+                    .replace(/\n\n+/g, '. ')  // Pausa en párrafos
+                    .replace(/\n/g, ', ')     // Pausa en saltos de línea
+                    .replace(/\.{2,}/g, '. ') // Múltiples puntos
                     
                     // Mejorar pronunciación de palabras específicas
-                    .replace(/Café/g, 'Café')
                     .replace(/cappuccino/gi, 'capuchino')
                     .replace(/latte/gi, 'laté')
                     .replace(/espresso/gi, 'espréso')
                     .replace(/mocha/gi, 'móka')
                     .replace(/macchiato/gi, 'makiáto')
                     .replace(/frappé/gi, 'frapé')
-                    .replace(/cortado/gi, 'cortádo');
+                    .replace(/cortado/gi, 'cortádo')
+                    .replace(/americano/gi, 'americano')
+                    .replace(/ristretto/gi, 'ristréto')
+                    
+                    // Mejorar pronunciación de nombres de lugares
+                    .replace(/Sucre/gi, 'Súcre')
+                    .replace(/Bolivia/gi, 'Bolivia')
+                    
+                    // Limpiar espacios extra
+                    .replace(/\s+/g, ' ')
+                    .trim();
             }
             
             // Cargar voces disponibles al cargar la página
@@ -451,8 +617,16 @@
 
             // Cargar voces de Amazon Polly al cargar la página
             document.addEventListener('DOMContentLoaded', function() {
+                console.log('🚀 Cargando voces de Amazon Polly...');
                 loadPollyVoices();
             });
+            
+            // También cargar inmediatamente si el DOM ya está listo
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', loadPollyVoices);
+            } else {
+                loadPollyVoices();
+            }
 
             function sendMessage() {
                 const message = chatInput.value.trim();
@@ -564,6 +738,62 @@
                 voiceTest.addEventListener('click', function() {
                     const testText = "Hola, soy tu asistente virtual de cafeterías. ¿Cómo suena mi voz?";
                     speakText(testText);
+                });
+            }
+            
+            // Botón de debug
+            const voiceDebug = document.getElementById('voice-debug');
+            if (voiceDebug) {
+                voiceDebug.addEventListener('click', function() {
+                    console.log('🔍 DEBUG: Información del sistema de voz');
+                    console.log('🔊 Speech Synthesis disponible:', 'speechSynthesis' in window);
+                    console.log('🎤 Voces disponibles:', speechSynthesis.getVoices().length);
+                    console.log('🌐 Voces en español:', speechSynthesis.getVoices().filter(v => v.lang.startsWith('es')).length);
+                    console.log('📱 User Agent:', navigator.userAgent);
+                    console.log('🎤 Polly disponible:', pollyAvailable);
+                    
+                    // Probar Polly específicamente
+                    if (pollyAvailable) {
+                        console.log('🎤 Probando Amazon Polly...');
+                        testPollyAudio();
+                    } else {
+                        console.log('🌐 Probando voz del navegador...');
+                        const testText = 'Prueba de voz del navegador. Si me escuchas, el sistema funciona correctamente.';
+                        speakText(testText);
+                    }
+                });
+            }
+            
+            // Función para probar Polly específicamente
+            function testPollyAudio() {
+                const testText = 'Hola, soy Amazon Polly.';
+                console.log('🎤 Probando Polly con texto:', testText);
+                
+                fetch('/chat/generar-audio/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+                    },
+                    body: JSON.stringify({ text: testText })
+                })
+                .then(response => {
+                    console.log('📡 Respuesta Polly:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('📊 Datos Polly:', data);
+                    if (data.success) {
+                        console.log('✅ Audio generado con Polly, tamaño:', data.audio ? data.audio.length : 'N/A');
+                        playPollyAudio(data.audio);
+                    } else {
+                        console.warn('❌ Polly falló:', data.error);
+                        speakWithBrowser(testText);
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Error con Polly:', error);
+                    speakWithBrowser(testText);
                 });
             }
 

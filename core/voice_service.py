@@ -57,6 +57,7 @@ class VoiceService:
         Retorna: base64 del audio o None si hay error
         """
         if not self.polly_client:
+            print("❌ Polly client no disponible")
             return None
         
         try:
@@ -64,38 +65,26 @@ class VoiceService:
             if not voice_id:
                 voice_id = settings.POLLY_VOICE_ID
             
-            # Crear hash del texto para cache
-            text_hash = hashlib.md5(text.encode()).hexdigest()
-            cache_key = f"polly_audio_{text_hash}_{voice_id}"
+            print(f"🔊 Generando audio con voz: {voice_id}")
+            print(f"📝 Texto: {text[:50]}...")
             
-            # Verificar cache
-            cached_audio = cache.get(cache_key)
-            if cached_audio:
-                return cached_audio
-            
-            # Procesar texto para mejor pronunciación
-            processed_text = self._process_text_for_speech(text)
-            
-            # Generar audio con Polly
+            # Generar audio con Polly (versión optimizada)
             response = self.polly_client.synthesize_speech(
-                Text=processed_text,
-                OutputFormat='mp3',
+                Text=text,
+                OutputFormat='mp3',  # MP3 es más compatible con navegadores
                 VoiceId=voice_id,
-                Engine='neural',  # Usar motor neural para mejor calidad
-                TextType='ssml' if '<speak>' in processed_text else 'text'
+                Engine='neural'
             )
             
             # Convertir a base64
             audio_data = response['AudioStream'].read()
             audio_base64 = base64.b64encode(audio_data).decode('utf-8')
             
-            # Guardar en cache por 1 hora
-            cache.set(cache_key, audio_base64, 3600)
-            
+            print(f"✅ Audio generado: {len(audio_base64)} caracteres")
             return audio_base64
             
         except Exception as e:
-            print(f"Error en Polly TTS: {e}")
+            print(f"❌ Error en Polly TTS: {e}")
             return None
     
     def _process_text_for_speech(self, text):

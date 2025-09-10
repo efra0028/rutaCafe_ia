@@ -399,7 +399,6 @@ def nueva_conversacion(request):
     })
 
 
-@login_required
 @csrf_exempt
 @require_http_methods(["POST"])
 def generar_audio(request):
@@ -416,12 +415,12 @@ def generar_audio(request):
         audio_base64 = voice_service.text_to_speech(text, voice_id)
         
         if audio_base64:
-            return JsonResponse({
-                'success': True,
-                'audio': audio_base64,
-                'format': 'mp3',
-                'voice_used': voice_id
-            })
+                return JsonResponse({
+                    'success': True,
+                    'audio': audio_base64,
+                    'format': 'mp3',
+                    'voice_used': voice_id
+                })
         else:
             return JsonResponse({
                 'success': False,
@@ -435,7 +434,6 @@ def generar_audio(request):
         }, status=500)
 
 
-@login_required
 def obtener_voces(request):
     """Obtener voces disponibles de Amazon Polly"""
     try:
