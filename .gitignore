@@ -8,6 +8,7 @@ __pycache__/
 
 # Django
 db.sqlite3
+*.sqlite3
 media/
 staticfiles/
 
@@ -24,6 +25,16 @@ venv/
 
 # Logs
 *.log
+
+# Audio files (too large for GitHub)
+*.mp3
+*.wav
+*.mp4
+*.avi
+
+# Test files
+test_*.py
+*_test.py
 
 # Node (por si acaso)
 node_modules/
