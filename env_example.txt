@@ -1,6 +1,6 @@
 # Configuración de APIs
 OPENAI_API_KEY=tu_clave_de_openai_aqui
-MAPBOX_ACCESS_TOKEN=pk.eyJ1IjoiZWZyYTAyOCIsImEiOiJjbWY2d25taWQwbDNhMmlxMzVyMHY4em52In0.VRnf0M7aTUL4Zw4AjYy0Rg
+MAPBOX_ACCESS_TOKEN=tu_clave_aqui
 
 # Configuración de Amazon Polly (AWS)
 AWS_ACCESS_KEY_ID=tu_access_key_id_aqui
@@ -11,5 +11,5 @@ POLLY_VOICE_ID=Lupe
 # Configuración de Django
 SECRET_KEY=tu_secret_key_aqui
 DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1
+
 
