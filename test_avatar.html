@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba Avatar 3D</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <style>
+        #avatar-container {
+            position: relative;
+            border-radius: 50%;
+            overflow: hidden;
+            background: linear-gradient(135deg, #6b2816, #d65a1a);
+            box-shadow: 0 4px 15px rgba(107, 40, 22, 0.3);
+            transition: all 0.3s ease;
+        }
+        #avatar-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+        }
+        .avatar-speaking {
+            animation: speak 0.5s ease-in-out infinite alternate;
+        }
+        @keyframes speak {
+            from { transform: scale(1); }
+            to { transform: scale(1.05); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-center mb-8 text-coffee-800">
+            Prueba del Avatar 3D
+        </h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Avatar Botón -->
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <h2 class="text-xl font-semibold mb-4 text-center">Botón Flotante</h2>
+                <div class="flex justify-center">
+                    <div id="avatar-container" class="w-16 h-16">
+                        <canvas id="avatar-canvas" class="w-full h-full"></canvas>
+                        <div id="avatar-fallback" class="absolute inset-0 flex items-center justify-center bg-coffee-600 text-white rounded-full">
+                            <i class="fas fa-robot text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Avatar Header -->
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <h2 class="text-xl font-semibold mb-4 text-center">Header del Chat</h2>
+                <div class="flex justify-center">
+                    <div id="avatar-header-container" class="w-10 h-10">
+                        <canvas id="avatar-header-canvas" class="w-full h-full"></canvas>
+                        <div id="avatar-header-fallback" class="absolute inset-0 flex items-center justify-center bg-coffee-600 text-white rounded-full">
+                            <i class="fas fa-robot text-sm"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Controles -->
+        <div class="mt-8 bg-white p-6 rounded-lg shadow-lg">
+            <h2 class="text-xl font-semibold mb-4 text-center">Controles de Expresión</h2>
+            <div class="flex flex-wrap justify-center gap-4">
+                <button id="btn-idle" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
+                    Idle
+                </button>
+                <button id="btn-speaking" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+                    Hablando
+                </button>
+                <button id="btn-smile" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
+                    Sonrisa
+                </button>
+                <button id="btn-test-voice" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded">
+                    Probar Voz
+                </button>
+            </div>
+        </div>
+        
+        <!-- Estado -->
+        <div class="mt-4 text-center">
+            <p id="status" class="text-gray-600">Cargando avatar...</p>
+        </div>
+    </div>
+
+    <script>
+        // Avatar 3D System
+        let avatarScene, avatarCamera, avatarRenderer, avatarModel, avatarMixer, avatarClock;
+        let isSpeaking = false;
+        let speakingAnimation = null;
+        let idleAnimation = null;
+        
+        // Inicializar avatar 3D
+        function initAvatar3D() {
+            console.log('🎭 Inicializando avatar 3D...');
+            
+            // Configurar escena
+            avatarScene = new THREE.Scene();
+            avatarScene.background = new THREE.Color(0x6b2816);
+            
+            // Configurar cámara
+            avatarCamera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+            avatarCamera.position.set(0, 0, 2);
+            
+            // Configurar renderer para el botón
+            const avatarCanvas = document.getElementById('avatar-canvas');
+            if (avatarCanvas) {
+                avatarRenderer = new THREE.WebGLRenderer({ 
+                    canvas: avatarCanvas, 
+                    alpha: true, 
+                    antialias: true 
+                });
+                avatarRenderer.setSize(64, 64);
+                avatarRenderer.setPixelRatio(window.devicePixelRatio);
+                avatarRenderer.shadowMap.enabled = true;
+                avatarRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            }
+            
+            // Configurar iluminación
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            avatarScene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(1, 1, 1);
+            directionalLight.castShadow = true;
+            avatarScene.add(directionalLight);
+            
+            // Cargar modelo 3D
+            loadAvatarModel();
+            
+            // Iniciar animación
+            avatarClock = new THREE.Clock();
+            animateAvatar();
+        }
+        
+        // Cargar modelo GLB
+        function loadAvatarModel() {
+            console.log('📦 Cargando modelo 3D...');
+            updateStatus('Cargando modelo 3D...');
+            
+            const loader = new THREE.GLTFLoader();
+            loader.load(
+                'https://models.readyplayer.me/68c217ddc036016545b8c3e6.glb',
+                function(gltf) {
+                    console.log('✅ Modelo cargado exitosamente');
+                    updateStatus('Modelo cargado exitosamente');
+                    avatarModel = gltf.scene;
+                    
+                    // Configurar modelo
+                    avatarModel.scale.set(0.8, 0.8, 0.8);
+                    avatarModel.position.set(0, -0.5, 0);
+                    avatarModel.castShadow = true;
+                    avatarModel.receiveShadow = true;
+                    
+                    // Agregar a la escena
+                    avatarScene.add(avatarModel);
+                    
+                    // Configurar animaciones
+                    if (gltf.animations && gltf.animations.length > 0) {
+                        avatarMixer = new THREE.AnimationMixer(avatarModel);
+                        
+                        // Buscar animaciones específicas
+                        gltf.animations.forEach(animation => {
+                            console.log('🎬 Animación encontrada:', animation.name);
+                            
+                            if (animation.name.toLowerCase().includes('idle') || 
+                                animation.name.toLowerCase().includes('breathing') ||
+                                animation.name.toLowerCase().includes('stand')) {
+                                idleAnimation = avatarMixer.clipAction(animation);
+                                idleAnimation.play();
+                            }
+                            
+                            if (animation.name.toLowerCase().includes('talk') || 
+                                animation.name.toLowerCase().includes('speak') ||
+                                animation.name.toLowerCase().includes('mouth')) {
+                                speakingAnimation = avatarMixer.clipAction(animation);
+                            }
+                        });
+                        
+                        // Si no hay animación de idle, usar la primera disponible
+                        if (!idleAnimation && gltf.animations.length > 0) {
+                            idleAnimation = avatarMixer.clipAction(gltf.animations[0]);
+                            idleAnimation.play();
+                        }
+                    }
+                    
+                    // Ocultar fallback
+                    const fallback = document.getElementById('avatar-fallback');
+                    if (fallback) fallback.style.display = 'none';
+                    
+                    console.log('🎭 Avatar 3D listo');
+                    updateStatus('Avatar 3D listo - Usa los controles para probar');
+                },
+                function(progress) {
+                    const percent = Math.round(progress.loaded / progress.total * 100);
+                    console.log('📥 Progreso de carga:', percent + '%');
+                    updateStatus(`Cargando modelo 3D... ${percent}%`);
+                },
+                function(error) {
+                    console.error('❌ Error cargando modelo 3D:', error);
+                    updateStatus('Error cargando modelo 3D - Usando fallback');
+                }
+            );
+        }
+        
+        // Animar avatar
+        function animateAvatar() {
+            requestAnimationFrame(animateAvatar);
+            
+            if (avatarMixer) {
+                const deltaTime = avatarClock.getDelta();
+                avatarMixer.update(deltaTime);
+            }
+            
+            if (avatarRenderer && avatarScene && avatarCamera) {
+                avatarRenderer.render(avatarScene, avatarCamera);
+            }
+        }
+        
+        // Controlar expresiones del avatar
+        function setAvatarExpression(expression) {
+            if (!avatarModel) return;
+            
+            console.log('😊 Cambiando expresión a:', expression);
+            updateStatus(`Expresión: ${expression}`);
+            
+            switch(expression) {
+                case 'speaking':
+                    if (speakingAnimation) {
+                        speakingAnimation.reset().play();
+                        isSpeaking = true;
+                    }
+                    break;
+                case 'idle':
+                    if (idleAnimation) {
+                        idleAnimation.reset().play();
+                        isSpeaking = false;
+                    }
+                    break;
+                case 'smile':
+                    // Rotar ligeramente la cabeza para simular sonrisa
+                    if (avatarModel) {
+                        avatarModel.rotation.y = Math.sin(Date.now() * 0.001) * 0.1;
+                    }
+                    break;
+            }
+        }
+        
+        // Actualizar estado
+        function updateStatus(message) {
+            const status = document.getElementById('status');
+            if (status) {
+                status.textContent = message;
+            }
+        }
+        
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Esperar un poco para que Three.js se cargue
+            setTimeout(() => {
+                if (typeof THREE !== 'undefined') {
+                    initAvatar3D();
+                } else {
+                    console.error('❌ Three.js no está disponible');
+                    updateStatus('Error: Three.js no está disponible');
+                }
+            }, 1000);
+            
+            // Controles
+            document.getElementById('btn-idle').addEventListener('click', () => setAvatarExpression('idle'));
+            document.getElementById('btn-speaking').addEventListener('click', () => setAvatarExpression('speaking'));
+            document.getElementById('btn-smile').addEventListener('click', () => setAvatarExpression('smile'));
+            document.getElementById('btn-test-voice').addEventListener('click', () => {
+                updateStatus('Probando voz...');
+                if ('speechSynthesis' in window) {
+                    const utterance = new SpeechSynthesisUtterance('Hola, soy tu asistente virtual de cafeterías. ¿Puedes ver mis expresiones?');
+                    utterance.lang = 'es-ES';
+                    utterance.onstart = () => setAvatarExpression('speaking');
+                    utterance.onend = () => setAvatarExpression('idle');
+                    speechSynthesis.speak(utterance);
+                } else {
+                    updateStatus('Voz no disponible en este navegador');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+
