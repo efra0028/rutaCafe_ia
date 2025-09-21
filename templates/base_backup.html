@@ -10,363 +10,10 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="{% static 'css/avatar.css' %}" rel="stylesheet">
     
-    <!-- Avatar CSS Styles -->
-    <style>
-        /* Avatar CSS Styles - Mini Version */
-        .avatar-mini {
-            position: relative;
-            width: 40px;
-            height: 56px;
-            transform: scale(0.8);
-            transition: all 0.3s ease;
-        }
-
-        /* Sombrero */
-        .avatar-mini .hat {
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 14px;
-            height: 6px;
-            z-index: 10;
-        }
-
-        .avatar-mini .hat-top {
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 8px;
-            height: 5px;
-            background: #dc2626;
-            border: 1px solid #000;
-            border-radius: 4px 4px 1px 1px;
-        }
-
-        .avatar-mini .hat-stripe {
-            position: absolute;
-            top: 1.5px;
-            left: 0.5px;
-            right: 0.5px;
-            height: 1px;
-            background: white;
-        }
-
-        .avatar-mini .hat-brim {
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 14px;
-            height: 2px;
-            background: #dc2626;
-            border: 1px solid #000;
-            border-radius: 7px;
-        }
-
-        /* Cabeza - Taza blanca */
-        .avatar-mini .head {
-            position: absolute;
-            top: 5px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 24px;
-            height: 22px;
-            background: white;
-            border: 1px solid #000;
-            border-radius: 2px;
-            overflow: visible;
-        }
-
-        /* Asa de la taza */
-        .avatar-mini .handle {
-            position: absolute;
-            right: -5px;
-            top: 4px;
-            width: 6px;
-            height: 8px;
-            border: 1px solid #000;
-            border-left: none;
-            background: transparent;
-            border-radius: 0 4px 4px 0;
-        }
-
-        /* Ojos */
-        .avatar-mini .eyes {
-            position: absolute;
-            top: 5px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 16px;
-            height: 7px;
-        }
-
-        .avatar-mini .eye {
-            position: absolute;
-            width: 6px;
-            height: 6px;
-            background: white;
-            border: 1px solid #000;
-            border-radius: 50%;
-            overflow: hidden;
-        }
-
-        .avatar-mini .eye.left {
-            left: 1px;
-        }
-
-        .avatar-mini .eye.right {
-            right: 1px;
-        }
-
-        .avatar-mini .pupil {
-            position: absolute;
-            width: 3.5px;
-            height: 3.5px;
-            background: #000;
-            border-radius: 50%;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            transition: all 0.3s ease;
-        }
-
-        /* Pupila en forma de pie */
-        .avatar-mini .pupil::before {
-            content: '';
-            position: absolute;
-            top: 0.5px;
-            left: 0.5px;
-            width: 0;
-            height: 0;
-            border-left: 1.5px solid white;
-            border-top: 1.5px solid transparent;
-            border-bottom: 1.5px solid transparent;
-        }
-
-        /* Nariz roja */
-        .avatar-mini .nose {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 2.5px;
-            height: 2.5px;
-            background: #dc2626;
-            border: 0.5px solid #000;
-            border-radius: 50%;
-        }
-
-        /* Boca */
-        .avatar-mini .mouth {
-            position: absolute;
-            bottom: 5px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 7px;
-            height: 3px;
-            background: #000;
-            border-radius: 0 0 3px 3px;
-            transition: all 0.2s ease;
-        }
-
-        .avatar-mini .mouth.talking {
-            height: 5px;
-            border-radius: 3px;
-            animation: mouthMoveMini 0.3s ease-in-out infinite alternate;
-        }
-
-        @keyframes mouthMoveMini {
-            0% { height: 3px; width: 7px; }
-            100% { height: 6px; width: 8px; }
-        }
-
-        /* Cuerpo - Rojo */
-        .avatar-mini .body {
-            position: absolute;
-            top: 26px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 18px;
-            height: 14px;
-            background: #dc2626;
-            border: 1px solid #000;
-            border-radius: 2px;
-        }
-
-        /* Botones del cuerpo */
-        .avatar-mini .body-buttons {
-            position: absolute;
-            top: 3px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 12px;
-            height: 8px;
-        }
-
-        .avatar-mini .button {
-            position: absolute;
-            width: 1.5px;
-            height: 1.5px;
-            background: #fbbf24;
-            border: 0.5px solid #000;
-            border-radius: 50%;
-        }
-
-        .avatar-mini .button.top {
-            top: 1px;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-
-        .avatar-mini .button.left {
-            bottom: 1px;
-            left: 2px;
-        }
-
-        .avatar-mini .button.right {
-            bottom: 1px;
-            right: 2px;
-        }
-
-        /* Brazos */
-        .avatar-mini .arms {
-            position: absolute;
-            top: 28px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 28px;
-            height: 6px;
-        }
-
-        .avatar-mini .arm {
-            position: absolute;
-            width: 7px;
-            height: 3px;
-            background: white;
-            border: 1px solid #000;
-            border-radius: 4px;
-        }
-
-        .avatar-mini .arm.left {
-            left: 2px;
-            transform: rotate(-15deg);
-        }
-
-        .avatar-mini .arm.right {
-            right: 2px;
-            transform: rotate(15deg);
-        }
-
-        /* Guantes blancos */
-        .avatar-mini .hand {
-            position: absolute;
-            width: 5px;
-            height: 4px;
-            background: white;
-            border: 1px solid #000;
-            border-radius: 50%;
-            top: -1px;
-        }
-
-        .avatar-mini .hand.left {
-            left: -3px;
-        }
-
-        .avatar-mini .hand.right {
-            right: -3px;
-        }
-
-        /* Piernas */
-        .avatar-mini .legs {
-            position: absolute;
-            top: 39px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 14px;
-            height: 12px;
-        }
-
-        .avatar-mini .leg {
-            position: absolute;
-            width: 5px;
-            height: 7px;
-            background: #dc2626;
-            border: 0.5px solid #000;
-            border-radius: 1px;
-        }
-
-        .avatar-mini .leg.left {
-            left: 1.5px;
-        }
-
-        .avatar-mini .leg.right {
-            right: 1.5px;
-        }
-
-        /* Zapatos */
-        .avatar-mini .shoe {
-            position: absolute;
-            bottom: -3px;
-            width: 7px;
-            height: 3.5px;
-            background: #8B4513;
-            border: 0.5px solid #000;
-            border-radius: 3px 3px 1px 1px;
-        }
-
-        .avatar-mini .shoe.left {
-            left: -1px;
-        }
-
-        .avatar-mini .shoe.right {
-            right: -1px;
-        }
-
-        /* Estados de expresión */
-        .avatar-mini.happy .mouth {
-            border-radius: 3px 3px 0 0;
-            height: 4px;
-        }
-
-        .avatar-mini.sad .mouth {
-            border-radius: 0 0 3px 3px;
-            height: 2px;
-            width: 5px;
-        }
-
-        .avatar-mini.surprised .mouth {
-            border-radius: 50%;
-            height: 4px;
-            width: 4px;
-        }
-
-        .avatar-mini.thinking .pupil {
-            transform: translate(-70%, -30%);
-        }
-
-        /* Animaciones de estado */
-        .avatar-mini.speaking {
-            animation: bounceMini 0.5s ease-in-out infinite alternate;
-        }
-
-        @keyframes bounceMini {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(-1px); }
-        }
-
-        .avatar-mini.listening .pupil {
-            animation: lookAroundMini 2s ease-in-out infinite;
-        }
-
-        @keyframes lookAroundMini {
-            0%, 100% { transform: translate(-50%, -50%); }
-            25% { transform: translate(-70%, -40%); }
-            50% { transform: translate(-30%, -60%); }
-            75% { transform: translate(-70%, -60%); }
-        }
-    </style>
+    <!-- Three.js para avatar 3D -->
+    <!-- HeyGen Web SDK -->
+    <script src="https://unpkg.com/@heygen/web-sdk@latest/dist/heygen-web-sdk.js"></script>
+    <script src="{% static 'js/heygen_avatar.js' %}"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -452,53 +99,12 @@
     {% if user.is_authenticated %}
         <div class="fixed bottom-6 right-6 z-50">
             <button id="chatbot-toggle" class="bg-coffee-600 hover:bg-coffee-700 text-white rounded-full w-16 h-16 shadow-lg transition duration-200 flex items-center justify-center animate-pulse relative overflow-hidden">
-                <!-- Avatar CSS Container -->
-                <div id="avatar-container" class="w-full h-full rounded-full overflow-hidden flex items-center justify-center">
-                    <div id="avatar" class="avatar-mini">
-                        <div class="hat">
-                            <div class="hat-brim"></div>
-                            <div class="hat-top">
-                                <div class="hat-stripe"></div>
-                            </div>
-                        </div>
-                        <div class="head">
-                            <div class="handle"></div>
-                            <div class="eyes">
-                                <div class="eye left">
-                                    <div class="pupil"></div>
-                                </div>
-                                <div class="eye right">
-                                    <div class="pupil"></div>
-                                </div>
-                            </div>
-                            <div class="nose"></div>
-                            <div class="mouth" id="mouth"></div>
-                        </div>
-                        <div class="body">
-                            <div class="body-buttons">
-                                <div class="button top"></div>
-                                <div class="button left"></div>
-                                <div class="button right"></div>
-                            </div>
-                        </div>
-                        <div class="arms">
-                            <div class="arm left">
-                                <div class="hand left"></div>
-                            </div>
-                            <div class="arm right">
-                                <div class="hand right"></div>
-                            </div>
-                        </div>
-                        <div class="legs">
-                            <div class="leg left">
-                                <div class="shoe left"></div>
-                            </div>
-                            <div class="leg right">
-                                <div class="shoe right"></div>
-                            </div>
-                        </div>
-                    </div>
+                <!-- Avatar 3D Container -->
+                <div id="avatar-container" class="w-full h-full rounded-full overflow-hidden">
+                    <canvas id="avatar-canvas" class="w-full h-full"></canvas>
                 </div>
+                <!-- Fallback icon -->
+                <i id="avatar-fallback" class="fas fa-robot text-xl absolute inset-0 flex items-center justify-center bg-coffee-600 rounded-full"></i>
             </button>
             <div class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center animate-bounce">
                 <i class="fas fa-exclamation text-xs"></i>
@@ -512,52 +118,10 @@
                     <!-- Chat Header -->
                     <div class="bg-coffee-600 text-white p-4 rounded-t-lg flex justify-between items-center">
                         <div class="flex items-center space-x-3">
-                            <!-- Avatar CSS en el header -->
+                            <!-- Avatar 3D en el header -->
                             <div id="avatar-header-container" class="w-10 h-10 rounded-full overflow-hidden bg-coffee-700 flex items-center justify-center">
-                                <div id="avatar-header" class="avatar-mini">
-                                    <div class="hat">
-                                        <div class="hat-brim"></div>
-                                        <div class="hat-top">
-                                            <div class="hat-stripe"></div>
-                                        </div>
-                                    </div>
-                                    <div class="head">
-                                        <div class="handle"></div>
-                                        <div class="eyes">
-                                            <div class="eye left">
-                                                <div class="pupil"></div>
-                                            </div>
-                                            <div class="eye right">
-                                                <div class="pupil"></div>
-                                            </div>
-                                        </div>
-                                        <div class="nose"></div>
-                                        <div class="mouth" id="mouth-header"></div>
-                                    </div>
-                                    <div class="body">
-                                        <div class="body-buttons">
-                                            <div class="button top"></div>
-                                            <div class="button left"></div>
-                                            <div class="button right"></div>
-                                        </div>
-                                    </div>
-                                    <div class="arms">
-                                        <div class="arm left">
-                                            <div class="hand left"></div>
-                                        </div>
-                                        <div class="arm right">
-                                            <div class="hand right"></div>
-                                        </div>
-                                    </div>
-                                    <div class="legs">
-                                        <div class="leg left">
-                                            <div class="shoe left"></div>
-                                        </div>
-                                        <div class="leg right">
-                                            <div class="shoe right"></div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <canvas id="avatar-header-canvas" class="w-full h-full"></canvas>
+                                <i id="avatar-header-fallback" class="fas fa-robot text-lg"></i>
                             </div>
                             <h3 class="text-lg font-semibold">
                                 Asistente de Café
@@ -596,9 +160,6 @@
                                 <i class="fas fa-volume-up mr-1"></i>
                                 Respuesta por voz
                             </label>
-                            <div id="voice-status" class="text-xs text-gray-500">
-                                Voz mejorada activada
-                            </div>
                 <!-- <div class="flex items-center space-x-2">
                     <button id="voice-stop" class="text-red-500 hover:text-red-700 text-sm" title="Detener voz">
                         <i class="fas fa-stop"></i>
@@ -631,326 +192,144 @@
     </footer>
 
     <script>
-        // Avatar CSS System
-        let isSpeaking = false;
-        let isListening = false;
+        // Chat and Voice System
+        let pollyAvailable = false;
+        let currentAudio = null;
         
-        // Inicializar avatar CSS
-        function initAvatarCSS() {
-            console.log('🎭 Inicializando avatar CSS...');
+        // Inicializar sistema de chat y voz
+        function initChatSystem() {
+            console.log('💬 Inicializando sistema de chat...');
             
-            // Los avatares ya están en el HTML, solo necesitamos configurar los event listeners
-            console.log('✅ Avatar CSS listo');
+            // Verificar disponibilidad de Polly
+            checkPollyAvailability();
+            
+            // Inicializar avatar HeyGen
+            initHeyGenAvatar();
+            
+            // Configurar eventos del chat
+            setupChatEvents();
         }
         
-        // Controlar expresiones del avatar
-        function setAvatarExpression(expression) {
-            const avatar = document.getElementById('avatar');
-            const avatarHeader = document.getElementById('avatar-header');
-            const mouth = document.getElementById('mouth');
-            const mouthHeader = document.getElementById('mouth-header');
-            
-            console.log('😊 Cambiando expresión a:', expression);
-            
-            // Remover todas las clases de expresión
-            [avatar, avatarHeader].forEach(av => {
-                if (av) {
-                    av.classList.remove('happy', 'sad', 'surprised', 'thinking', 'speaking', 'listening');
-                }
-            });
-            
-            // Aplicar nueva expresión
-            switch(expression) {
-                case 'speaking':
-                    [avatar, avatarHeader].forEach(av => {
-                        if (av) av.classList.add('speaking');
-                    });
-                    [mouth, mouthHeader].forEach(m => {
-                        if (m) m.classList.add('talking');
-                    });
-                    isSpeaking = true;
-                    break;
-                case 'idle':
-                    [avatar, avatarHeader].forEach(av => {
-                        if (av) av.classList.remove('speaking', 'listening');
-                    });
-                    [mouth, mouthHeader].forEach(m => {
-                        if (m) m.classList.remove('talking');
-                    });
-                    isSpeaking = false;
-                    break;
-                case 'listening':
-                    [avatar, avatarHeader].forEach(av => {
-                        if (av) av.classList.add('listening');
-                    });
-                    isListening = true;
-                    break;
-                case 'happy':
-                    [avatar, avatarHeader].forEach(av => {
-                        if (av) av.classList.add('happy');
-                    });
-                    break;
-                case 'sad':
-                    [avatar, avatarHeader].forEach(av => {
-                        if (av) av.classList.add('sad');
-                    });
-                    break;
-                case 'surprised':
-                    [avatar, avatarHeader].forEach(av => {
-                        if (av) av.classList.add('surprised');
-                    });
-                    break;
-                case 'thinking':
-                    [avatar, avatarHeader].forEach(av => {
-                        if (av) av.classList.add('thinking');
-                    });
-                    break;
-            }
+        // Verificar disponibilidad de Polly
+        function checkPollyAvailability() {
+            fetch('/chat/obtener-voces/')
+                .then(response => response.json())
+                .then(data => {
+                    pollyAvailable = data.polly_available;
+                    console.log('🎤 Polly disponible:', pollyAvailable);
+                })
+                .catch(error => {
+                    console.error('❌ Error verificando Polly:', error);
+                    pollyAvailable = false;
+                });
         }
         
-        // Sincronizar con voz
-        function syncAvatarWithVoice(speaking) {
-            if (speaking) {
-                setAvatarExpression('speaking');
-            } else {
-                setAvatarExpression('idle');
-            }
-        }
-        
-        // Inicializar avatar cuando el DOM esté listo
-        document.addEventListener('DOMContentLoaded', function() {
-            initAvatarCSS();
-        });
-
-        // Chatbot functionality
-        document.addEventListener('DOMContentLoaded', function() {
+        // Configurar eventos del chat
+        function setupChatEvents() {
+            // Botón de toggle del chatbot
             const chatbotToggle = document.getElementById('chatbot-toggle');
             const chatbotModal = document.getElementById('chatbot-modal');
             const chatbotClose = document.getElementById('chatbot-close');
-            const chatInput = document.getElementById('chat-input');
-            const chatSend = document.getElementById('chat-send');
-            const chatMessages = document.getElementById('chat-messages');
-
-            if (chatbotToggle) {
-                chatbotToggle.addEventListener('click', function() {
+            
+            if (chatbotToggle && chatbotModal) {
+                chatbotToggle.addEventListener('click', () => {
                     chatbotModal.classList.remove('hidden');
                 });
             }
-
-            if (chatbotClose) {
-                chatbotClose.addEventListener('click', function() {
+            
+            if (chatbotClose && chatbotModal) {
+                chatbotClose.addEventListener('click', () => {
                     chatbotModal.classList.add('hidden');
                 });
             }
-
-            function addMessage(content, isUser = false) {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = isUser ? 
-                    'bg-coffee-600 text-white p-3 rounded-lg ml-8' : 
-                    'bg-gray-100 p-3 rounded-lg mr-8';
-                
-                const icon = isUser ? 'fas fa-user' : 'fas fa-robot';
-                messageDiv.innerHTML = `<p class="text-sm"><i class="${icon} mr-1"></i>${content}</p>`;
-                
-                chatMessages.appendChild(messageDiv);
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
-
-            // Voice recognition
-            let recognition = null;
-            let isListening = false;
-
-            // Initialize speech recognition
-            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                recognition = new SpeechRecognition();
-                recognition.continuous = false;
-                recognition.interimResults = false;
-                recognition.lang = 'es-ES';
-
-                recognition.onstart = function() {
-                    isListening = true;
-                    document.getElementById('chat-voice').innerHTML = '<i class="fas fa-stop"></i>';
-                    document.getElementById('chat-voice').classList.add('bg-red-600', 'hover:bg-red-700');
-                    document.getElementById('chat-voice').classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                    setAvatarExpression('listening');
-                };
-
-                recognition.onresult = function(event) {
-                    const transcript = event.results[0][0].transcript;
-                    chatInput.value = transcript;
-                    sendMessage();
-                };
-
-                recognition.onend = function() {
-                    isListening = false;
-                    document.getElementById('chat-voice').innerHTML = '<i class="fas fa-microphone"></i>';
-                    document.getElementById('chat-voice').classList.add('bg-blue-600', 'hover:bg-blue-700');
-                    document.getElementById('chat-voice').classList.remove('bg-red-600', 'hover:bg-red-700');
-                    setAvatarExpression('idle');
-                };
-
-                recognition.onerror = function(event) {
-                    console.error('Speech recognition error:', event.error);
-                    isListening = false;
-                    document.getElementById('chat-voice').innerHTML = '<i class="fas fa-microphone"></i>';
-                    document.getElementById('chat-voice').classList.add('bg-blue-600', 'hover:bg-blue-700');
-                    document.getElementById('chat-voice').classList.remove('bg-red-600', 'hover:bg-red-700');
-                    setAvatarExpression('idle');
-                };
-            }
-
-            // Voice synthesis with Amazon Polly (professional quality)
-            let pollyAvailable = false;
-            let availableVoices = [];
-            let currentAudio = null;
             
-            // Verificar si Polly está disponible al cargar
-            console.log('🔊 Inicializando sistema de voz...');
-
-            // Cargar voces de Amazon Polly al iniciar
-            function loadPollyVoices() {
-                console.log('🔊 Cargando voces de Amazon Polly...');
-                fetch('/chat/obtener-voces/')
-                    .then(response => {
-                        console.log('📡 Respuesta de voces:', response.status);
-                        return response.json();
-                    })
-                    .then(data => {
-                        console.log('📊 Datos recibidos:', data);
-                        if (data.success) {
-                            pollyAvailable = data.polly_available;
-                            availableVoices = data.voices;
-                            console.log('✅ Amazon Polly disponible:', pollyAvailable);
-                            console.log('🎤 Voces disponibles:', availableVoices);
-                            
-                           
-                        } else {
-                            console.log('❌ Error en respuesta de voces:', data);
-                            updateVoiceStatus('Voz del navegador activada');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('❌ Error cargando voces:', error);
-                        updateVoiceStatus('Voz del navegador activada');
-                    });
-            }
-
-            function speakText(text) {
-                console.log('🔊 speakText llamado con:', text.substring(0, 50));
-                console.log('🔊 pollyAvailable:', pollyAvailable);
-                
-                // Activar expresión de habla en el avatar
-                syncAvatarWithVoice(true);
-                
-                // Intentar Polly primero, fallback a navegador
-                if (pollyAvailable) {
-                    console.log('🎤 Intentando Amazon Polly...');
-                    speakWithPolly(text);
-                } else {
-                    console.log('🌐 Polly no disponible, usando voz del navegador');
-                    speakWithBrowser(text);
-                }
-            }
-
-            // Usar Amazon Polly para voz profesional
-            function speakWithPolly(text) {
-                console.log('🎤 Iniciando Polly con texto:', text.substring(0, 50));
-                updateVoiceStatus('Generando audio profesional...');
-                
-                fetch('/chat/generar-audio/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
-                    },
-                    body: JSON.stringify({ text: text })
-                })
-                .then(response => {
-                    console.log('📡 Respuesta Polly:', response.status);
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('📊 Datos Polly:', data);
-                    if (data.success) {
-                        console.log('✅ Audio generado con Polly, tamaño:', data.audio ? data.audio.length : 'N/A');
-                        playPollyAudio(data.audio);
-                        updateVoiceStatus(`Amazon Polly - ${data.voice_used}`);
-                    } else {
-                        console.warn('❌ Polly falló, usando navegador:', data.error);
-                        speakWithBrowser(text);
+            // Envío de mensajes
+            const chatInput = document.getElementById('chat-input');
+            const chatSend = document.getElementById('chat-send');
+            
+            if (chatInput && chatSend) {
+                chatSend.addEventListener('click', sendMessage);
+                chatInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        sendMessage();
                     }
-                })
-                .catch(error => {
-                    console.error('❌ Error con Polly:', error);
-                    speakWithBrowser(text);
                 });
             }
-
-            // Utilidades de audio/base64
-            function base64ToUint8Array(base64) {
-                const binaryString = atob(base64);
-                const len = binaryString.length;
-                const bytes = new Uint8Array(len);
-                for (let i = 0; i < len; i++) {
-                    bytes[i] = binaryString.charCodeAt(i);
+        }
+        
+        // Enviar mensaje del chat
+        function sendMessage() {
+            const chatInput = document.getElementById('chat-input');
+            const chatMessages = document.getElementById('chat-messages');
+            
+            if (!chatInput || !chatMessages) return;
+            
+            const message = chatInput.value.trim();
+            if (!message) return;
+            
+            // Agregar mensaje del usuario
+            addMessage(message, true);
+            chatInput.value = '';
+            
+            // Enviar al backend
+            fetch('/chat/enviar-mensaje/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+                },
+                body: JSON.stringify({ mensaje: message })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    addMessage(data.mensaje_bot, false);
+                    // Hacer que el avatar hable
+                    speakText(data.mensaje_bot);
+                } else {
+                    addMessage('Error enviando mensaje', false);
                 }
-                return bytes;
-            }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                addMessage('Error de red', false);
+            });
+        }
+        
+        // Agregar mensaje al chat
+        function addMessage(text, isUser) {
+            const chatMessages = document.getElementById('chat-messages');
+            if (!chatMessages) return;
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = isUser ? 
+                'bg-coffee-600 text-white ml-8 p-3 rounded-lg' : 
+                'bg-gray-100 mr-8 p-3 rounded-lg';
+            
+            messageDiv.innerHTML = `
+                <p class="text-sm">
+                    <i class="${isUser ? 'fas fa-user' : 'fas fa-robot'} mr-1"></i>
+                    ${text}
+                </p>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Inicializar cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', function() {
+            initChatSystem();
+        });
 
-            // Reproducir audio de Amazon Polly
-            function playPollyAudio(audioBase64) {
-                console.log('🎵 Reproduciendo audio Polly, tamaño:', audioBase64 ? audioBase64.length : 'N/A');
-                try {
-                    // Detener audio anterior
-                    if (currentAudio) {
-                        console.log('⏹️ Deteniendo audio anterior');
-                        currentAudio.pause();
-                        currentAudio = null;
-                    }
+        // Voice System (Legacy - being replaced by HeyGen)
+        let pollyAvailable = false;
+        let currentAudio = null;
+    </script>
 
-                    // Crear audio desde base64 (bytes reales)
-                    console.log('🔄 Convirtiendo base64 a bytes...');
-                    const byteArray = base64ToUint8Array(audioBase64);
-                    const audioBlob = new Blob([byteArray], { type: 'audio/mpeg' });
-                    const audioUrl = URL.createObjectURL(audioBlob);
-                    
-                    console.log('🎧 Creando elemento Audio...');
-                    currentAudio = new Audio(audioUrl);
-                    
-                    // Configurar eventos
-                    currentAudio.onloadstart = function() {
-                        console.log('📥 Cargando audio...');
-                    };
-                    
-                    currentAudio.oncanplay = function() {
-                        console.log('✅ Audio listo para reproducir');
-                    };
-                    
-                    currentAudio.onplay = function() {
-                        console.log('▶️ Audio iniciado');
-                        updateVoiceStatus('Reproduciendo audio profesional...');
-                    };
-                    
-                    currentAudio.onended = function() {
-                        console.log('⏹️ Audio terminado');
-                        updateVoiceStatus('Amazon Polly activado');
-                        URL.revokeObjectURL(audioUrl);
-                        // Desactivar expresión de habla
-                        syncAvatarWithVoice(false);
-                    };
-                    
-                    currentAudio.onerror = function(event) {
-                        console.error('❌ Error en audio Polly:', event);
-                        console.log('🔄 Cambiando a voz del navegador...');
-                        updateVoiceStatus('Usando voz del navegador...');
-                        // Fallback a voz del navegador
-                        speakWithBrowser(text);
-                    };
-                    
-                    currentAudio.onstalled = function() {
-                        console.log('⚠️ Audio estancado, reintentando...');
-                    };
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
                     
                     currentAudio.onabort = function() {
                         console.log('⚠️ Audio abortado');
@@ -1096,7 +475,6 @@
 
             // Actualizar estado de voz
             function updateVoiceStatus(status) {
-                const voiceStatus = document.getElementById('voice-status');
                 if (voiceStatus) {
                     voiceStatus.textContent = status;
                 }
@@ -1369,15 +747,17 @@
             }
 
             // Actualizar estado de voz
-            const voiceCheckbox = document.getElementById('voice-response');
-            if (voiceCheckbox) {
-                voiceCheckbox.addEventListener('change', function() {
-                    if (this.checked) {
-                        updateVoiceStatus('Voz mejorada activada');
-                    } else {
-                        updateVoiceStatus('Voz desactivada');
-                    }
-                });
+            if (voiceStatus) {
+                const voiceCheckbox = document.getElementById('voice-response');
+                if (voiceCheckbox) {
+                    voiceCheckbox.addEventListener('change', function() {
+                        if (this.checked) {
+                            voiceStatus.textContent = 'Voz mejorada activada';
+                        } else {
+                            voiceStatus.textContent = 'Voz desactivada';
+                        }
+                    });
+                }
             }
         });
     </script>

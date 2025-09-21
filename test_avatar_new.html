@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Avatar CSS - Asistente de Cafetería</title>
+    <link href="static/css/avatar.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .test-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .avatar-container {
+            margin: 20px 0;
+        }
+
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .status {
+            margin: 15px 0;
+            font-weight: bold;
+            color: #666;
+        }
+
+        .voice-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            margin: 15px 0;
+        }
+
+        .input-group {
+            margin: 20px 0;
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .chat-log {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            max-height: 200px;
+            overflow-y: auto;
+            text-align: left;
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 8px 12px;
+            border-radius: 10px;
+        }
+
+        .user-message {
+            background: #e3f2fd;
+            margin-left: 20px;
+        }
+
+        .assistant-message {
+            background: #f3e5f5;
+            margin-right: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Test Avatar CSS - Asistente de Cafetería</h1>
+        
+        <div class="avatar-container">
+            <div class="avatar" id="avatar">
+                <div class="hat">
+                    <div class="hat-brim"></div>
+                    <div class="hat-top">
+                        <div class="hat-stripe"></div>
+                    </div>
+                </div>
+                <div class="head">
+                    <div class="handle"></div>
+                    <div class="eyes">
+                        <div class="eye left">
+                            <div class="pupil"></div>
+                        </div>
+                        <div class="eye right">
+                            <div class="pupil"></div>
+                        </div>
+                    </div>
+                    <div class="nose"></div>
+                    <div class="mouth" id="mouth"></div>
+                </div>
+                <div class="body">
+                    <div class="body-buttons">
+                        <div class="button top"></div>
+                        <div class="button left"></div>
+                        <div class="button right"></div>
+                    </div>
+                </div>
+                <div class="arms">
+                    <div class="arm left">
+                        <div class="hand left"></div>
+                    </div>
+                    <div class="arm right">
+                        <div class="hand right"></div>
+                    </div>
+                </div>
+                <div class="legs">
+                    <div class="leg left">
+                        <div class="shoe left"></div>
+                    </div>
+                    <div class="leg right">
+                        <div class="shoe right"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="status" id="status">Listo para conversar</div>
+
+        <div class="controls">
+            <button class="btn" onclick="setAvatarExpression('happy')">😊 Feliz</button>
+            <button class="btn" onclick="setAvatarExpression('sad')">😢 Triste</button>
+            <button class="btn" onclick="setAvatarExpression('surprised')">😮 Sorprendido</button>
+            <button class="btn" onclick="setAvatarExpression('thinking')">🤔 Pensando</button>
+            <button class="btn" onclick="setAvatarExpression('speaking')">🗣️ Hablando</button>
+            <button class="btn" onclick="setAvatarExpression('listening')">👂 Escuchando</button>
+            <button class="btn" onclick="setAvatarExpression('idle')">😐 Normal</button>
+        </div>
+
+        <div class="input-group">
+            <input type="text" class="text-input" id="textInput" placeholder="Escribe tu mensaje aquí...">
+            <div class="voice-controls">
+                <button class="btn" id="sendBtn">Enviar</button>
+                <button class="btn" id="voiceBtn">🎤 Voz</button>
+                <button class="btn" id="stopBtn" disabled>⏹ Detener</button>
+            </div>
+        </div>
+
+        <div class="chat-log" id="chatLog"></div>
+    </div>
+
+    <script>
+        class VirtualAssistant {
+            constructor() {
+                this.avatar = document.getElementById('avatar');
+                this.mouth = document.getElementById('mouth');
+                this.status = document.getElementById('status');
+                this.chatLog = document.getElementById('chatLog');
+                this.textInput = document.getElementById('textInput');
+                this.sendBtn = document.getElementById('sendBtn');
+                this.voiceBtn = document.getElementById('voiceBtn');
+                this.stopBtn = document.getElementById('stopBtn');
+
+                this.recognition = null;
+                this.synthesis = window.speechSynthesis;
+                this.currentUtterance = null;
+                this.isListening = false;
+                this.isSpeaking = false;
+
+                this.responses = {
+                    "hola": "¡Hola! ¿Cómo estás hoy?",
+                    "como estas": "¡Estoy muy bien, gracias por preguntar! ¿En qué puedo ayudarte?",
+                    "que tal": "¡Todo perfecto! ¿Y tú qué tal?",
+                    "buenos dias": "¡Buenos días! ¡Qué gusto saludarte!",
+                    "buenas tardes": "¡Buenas tardes! ¿Cómo va tu día?",
+                    "buenas noches": "¡Buenas noches! Espero que hayas tenido un buen día.",
+                    "como te llamas": "Soy tu asistente virtual de cafeterías. ¡Puedes llamarme como gustes!",
+                    "que puedes hacer": "Puedo conversar contigo, responder preguntas básicas y mostrar diferentes expresiones. ¡Pregúntame lo que quieras!",
+                    "gracias": "¡De nada! Siempre es un placer ayudarte.",
+                    "adios": "¡Hasta luego! Que tengas un excelente día.",
+                    "bye": "¡Bye! ¡Nos vemos pronto!",
+                    "help": "Puedes escribirme o hablarme usando el botón de micrófono. También puedo cambiar mis expresiones faciales.",
+                    "ayuda": "¡Claro! Puedes escribirme o usar el micrófono para hablarme. También observa cómo cambian mis expresiones.",
+                    "tiempo": "No tengo acceso a información meteorológica en tiempo real, pero espero que tengas un clima agradable.",
+                    "hora": `Son aproximadamente las ${new Date().toLocaleTimeString()}.`,
+                    "fecha": `Hoy es ${new Date().toLocaleDateString()}.`
+                };
+
+                this.initializeSpeechRecognition();
+                this.initializeEventListeners();
+            }
+
+            initializeSpeechRecognition() {
+                if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    this.recognition = new SpeechRecognition();
+                    this.recognition.continuous = false;
+                    this.recognition.interimResults = false;
+                    this.recognition.lang = 'es-ES';
+
+                    this.recognition.onstart = () => {
+                        this.isListening = true;
+                        this.setStatus('Escuchando...');
+                        this.setAvatarExpression('listening');
+                        this.stopBtn.disabled = false;
+                    };
+
+                    this.recognition.onresult = (event) => {
+                        const transcript = event.results[0][0].transcript;
+                        this.textInput.value = transcript;
+                        this.addMessage(transcript, 'user');
+                        this.processMessage(transcript);
+                    };
+
+                    this.recognition.onerror = (event) => {
+                        this.setStatus(`Error: ${event.error}`);
+                        this.stopListening();
+                    };
+
+                    this.recognition.onend = () => {
+                        this.stopListening();
+                    };
+                } else {
+                    this.voiceBtn.disabled = true;
+                    this.voiceBtn.textContent = 'Voz no disponible';
+                    console.log('Speech recognition not supported');
+                }
+            }
+
+            initializeEventListeners() {
+                this.sendBtn.addEventListener('click', () => {
+                    const message = this.textInput.value.trim();
+                    if (message) {
+                        this.addMessage(message, 'user');
+                        this.processMessage(message);
+                        this.textInput.value = '';
+                    }
+                });
+
+                this.textInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.sendBtn.click();
+                    }
+                });
+
+                this.voiceBtn.addEventListener('click', () => {
+                    this.startListening();
+                });
+
+                this.stopBtn.addEventListener('click', () => {
+                    this.stopSpeaking();
+                });
+            }
+
+            startListening() {
+                if (this.recognition && !this.isListening) {
+                    this.recognition.start();
+                }
+            }
+
+            stopListening() {
+                if (this.recognition && this.isListening) {
+                    this.recognition.stop();
+                    this.isListening = false;
+                    this.stopBtn.disabled = true;
+                    this.setStatus('Listo para conversar');
+                    this.setAvatarExpression('idle');
+                }
+            }
+
+            processMessage(message) {
+                this.setStatus('Pensando...');
+                this.setAvatarExpression('thinking');
+
+                setTimeout(() => {
+                    const response = this.generateResponse(message.toLowerCase());
+                    this.addMessage(response, 'assistant');
+                    this.speak(response);
+                }, 1000);
+            }
+
+            generateResponse(message) {
+                // Buscar palabras clave en el mensaje
+                for (let key in this.responses) {
+                    if (message.includes(key)) {
+                        return this.responses[key];
+                    }
+                }
+
+                // Respuestas por defecto más inteligentes
+                if (message.includes('nombre') || message.includes('quien eres')) {
+                    return "Soy tu asistente virtual de cafeterías. Estoy aquí para ayudarte y conversar contigo.";
+                } else if (message.includes('edad')) {
+                    return "Soy tan joven como nuestro proyecto juntos. ¡Recién nacido digitalmente!";
+                } else if (message.includes('color') && message.includes('favorito')) {
+                    return "Me gustan mucho los colores vibrantes, especialmente el rojo de mi cuerpo.";
+                } else if (message.includes('musica')) {
+                    return "¡Me encanta la música! Aunque no puedo escucharla, me imagino que debe ser maravillosa.";
+                } else if (message.includes('comida')) {
+                    return "No como, pero si pudiera, creo que me gustarían los circuitos con salsa de código.";
+                } else if (message.includes('feliz') || message.includes('contento')) {
+                    return "¡Me alegra saber que estás feliz! La alegría es contagiosa.";
+                } else if (message.includes('triste')) {
+                    return "Lamento que te sientas triste. ¿Hay algo en lo que pueda ayudarte?";
+                } else {
+                    return "Interesante lo que me dices. Cuéntame más sobre eso, me gusta conversar contigo.";
+                }
+            }
+
+            speak(text) {
+                if (this.synthesis) {
+                    this.stopSpeaking();
+                    
+                    this.currentUtterance = new SpeechSynthesisUtterance(text);
+                    this.currentUtterance.lang = 'es-ES';
+                    this.currentUtterance.rate = 0.9;
+                    this.currentUtterance.pitch = 1.1;
+                    this.currentUtterance.volume = 0.7;
+
+                    this.currentUtterance.onstart = () => {
+                        this.isSpeaking = true;
+                        this.setStatus('Hablando...');
+                        this.setAvatarExpression('speaking');
+                        this.stopBtn.disabled = false;
+                    };
+
+                    this.currentUtterance.onend = () => {
+                        this.stopSpeaking();
+                        this.setStatus('Listo para conversar');
+                        this.isSpeaking = false;
+                        this.stopBtn.disabled = true;
+                        this.setAvatarExpression('idle');
+                    };
+
+                    this.currentUtterance.onerror = () => {
+                        this.stopSpeaking();
+                        this.setStatus('Error al hablar');
+                        this.isSpeaking = false;
+                        this.stopBtn.disabled = true;
+                        this.setAvatarExpression('idle');
+                    };
+
+                    this.synthesis.speak(this.currentUtterance);
+                }
+            }
+
+            stopSpeaking() {
+                if (this.synthesis && this.isSpeaking) {
+                    this.synthesis.cancel();
+                    this.isSpeaking = false;
+                    this.stopBtn.disabled = true;
+                    this.setStatus('Listo para conversar');
+                    this.setAvatarExpression('idle');
+                }
+            }
+
+            setAvatarExpression(expression) {
+                // Remover todas las clases de expresión
+                this.avatar.classList.remove('happy', 'sad', 'surprised', 'thinking', 'speaking', 'listening');
+                
+                // Aplicar nueva expresión
+                switch(expression) {
+                    case 'speaking':
+                        this.avatar.classList.add('speaking');
+                        this.mouth.classList.add('talking');
+                        break;
+                    case 'idle':
+                        this.avatar.classList.remove('speaking', 'listening');
+                        this.mouth.classList.remove('talking');
+                        break;
+                    case 'listening':
+                        this.avatar.classList.add('listening');
+                        break;
+                    case 'happy':
+                    case 'sad':
+                    case 'surprised':
+                    case 'thinking':
+                        this.avatar.classList.add(expression);
+                        break;
+                }
+            }
+
+            setStatus(text) {
+                this.status.textContent = text;
+            }
+
+            addMessage(text, sender) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}-message`;
+                messageDiv.textContent = `${sender === 'user' ? 'Tú' : 'Asistente'}: ${text}`;
+                this.chatLog.appendChild(messageDiv);
+                this.chatLog.scrollTop = this.chatLog.scrollHeight;
+            }
+        }
+
+        // Función global para probar expresiones
+        function setAvatarExpression(expression) {
+            if (window.assistant) {
+                window.assistant.setAvatarExpression(expression);
+            }
+        }
+
+        // Inicializar el asistente
+        document.addEventListener('DOMContentLoaded', function() {
+            window.assistant = new VirtualAssistant();
+        });
+    </script>
+</body>
+</html>

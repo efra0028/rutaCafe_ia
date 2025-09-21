@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistente Virtual con Avatar</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .assistant-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .avatar-container {
+            position: relative;
+            width: 200px;
+            height: 280px;
+            margin: 0 auto 20px;
+        }
+
+        .avatar {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        /* Sombrero */
+        .hat {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 30px;
+            z-index: 10;
+        }
+
+        .hat-top {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 25px;
+            background: #dc2626;
+            border: 4px solid #000;
+            border-radius: 20px 20px 5px 5px;
+        }
+
+        .hat-stripe {
+            position: absolute;
+            top: 8px;
+            left: 2px;
+            right: 2px;
+            height: 6px;
+            background: white;
+        }
+
+        .hat-brim {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 12px;
+            background: #dc2626;
+            border: 4px solid #000;
+            border-radius: 35px;
+        }
+
+        /* Cabeza - Taza blanca */
+        .head {
+            position: absolute;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 110px;
+            background: white;
+            border: 5px solid #000;
+            border-radius: 10px;
+            overflow: visible;
+        }
+
+        /* Asa de la taza */
+        .handle {
+            position: absolute;
+            right: -25px;
+            top: 20px;
+            width: 30px;
+            height: 40px;
+            border: 5px solid #000;
+            border-left: none;
+            background: transparent;
+            border-radius: 0 20px 20px 0;
+        }
+
+        /* Ojos - Estilo pie chart */
+        .eyes {
+            position: absolute;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 35px;
+        }
+
+        .eye {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: white;
+            border: 4px solid #000;
+            border-radius: 50%;
+            overflow: hidden;
+        }
+
+        .eye.left {
+            left: 5px;
+        }
+
+        .eye.right {
+            right: 5px;
+        }
+
+        .pupil {
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            background: #000;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.3s ease;
+        }
+
+        /* Pupila en forma de pie */
+        .pupil::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 0;
+            height: 0;
+            border-left: 7px solid white;
+            border-top: 7px solid transparent;
+            border-bottom: 7px solid transparent;
+        }
+
+        /* Nariz roja */
+        .nose {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 12px;
+            background: #dc2626;
+            border: 2px solid #000;
+            border-radius: 50%;
+        }
+
+        /* Boca */
+        .mouth {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 35px;
+            height: 15px;
+            background: #000;
+            border-radius: 0 0 17px 17px;
+            transition: all 0.2s ease;
+        }
+
+        .mouth.talking {
+            height: 25px;
+            border-radius: 17px;
+            animation: mouthMove 0.3s ease-in-out infinite alternate;
+        }
+
+        @keyframes mouthMove {
+            0% { height: 15px; width: 35px; }
+            100% { height: 30px; width: 40px; }
+        }
+
+        /* Cuerpo - Rojo como Cuphead */
+        .body {
+            position: absolute;
+            top: 130px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90px;
+            height: 70px;
+            background: #dc2626;
+            border: 4px solid #000;
+            border-radius: 10px;
+        }
+
+        /* Botones del cuerpo */
+        .body-buttons {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 40px;
+        }
+
+        .button {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #fbbf24;
+            border: 2px solid #000;
+            border-radius: 50%;
+        }
+
+        .button.top {
+            top: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .button.left {
+            bottom: 5px;
+            left: 10px;
+        }
+
+        .button.right {
+            bottom: 5px;
+            right: 10px;
+        }
+
+        /* Brazos - Tubito blanco */
+        .arms {
+            position: absolute;
+            top: 140px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 140px;
+            height: 30px;
+        }
+
+        .arm {
+            position: absolute;
+            width: 35px;
+            height: 15px;
+            background: white;
+            border: 4px solid #000;
+            border-radius: 20px;
+        }
+
+        .arm.left {
+            left: 10px;
+            transform: rotate(-15deg);
+        }
+
+        .arm.right {
+            right: 10px;
+            transform: rotate(15deg);
+        }
+
+        /* Guantes blancos */
+        .hand {
+            position: absolute;
+            width: 25px;
+            height: 20px;
+            background: white;
+            border: 4px solid #000;
+            border-radius: 50%;
+            top: -5px;
+        }
+
+        .hand.left {
+            left: -15px;
+        }
+
+        .hand.right {
+            right: -15px;
+        }
+
+        /* Piernas - Pantalón rojo y zapatos marrones */
+        .legs {
+            position: absolute;
+            top: 195px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 60px;
+        }
+
+        .leg {
+            position: absolute;
+            width: 25px;
+            height: 35px;
+            background: #dc2626;
+            border: 3px solid #000;
+            border-radius: 5px;
+        }
+
+        .leg.left {
+            left: 8px;
+        }
+
+        .leg.right {
+            right: 8px;
+        }
+
+        /* Zapatos */
+        .shoe {
+            position: absolute;
+            bottom: -15px;
+            width: 35px;
+            height: 18px;
+            background: #8B4513;
+            border: 3px solid #000;
+            border-radius: 15px 15px 5px 5px;
+        }
+
+        .shoe.left {
+            left: -5px;
+        }
+
+        .shoe.right {
+            right: -5px;
+        }
+
+        /* Estados de expresión */
+        .avatar.happy .mouth {
+            border-radius: 15px 15px 0 0;
+            height: 20px;
+        }
+
+        .avatar.sad .mouth {
+            border-radius: 0 0 15px 15px;
+            height: 10px;
+            width: 25px;
+        }
+
+        .avatar.surprised .mouth {
+            border-radius: 50%;
+            height: 20px;
+            width: 20px;
+        }
+
+        .avatar.thinking .pupil {
+            transform: translate(-70%, -30%);
+        }
+
+        /* Animaciones de estado */
+        .avatar.speaking {
+            animation: bounce 0.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes bounce {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-5px); }
+        }
+
+        .avatar.listening .pupil {
+            animation: lookAround 2s ease-in-out infinite;
+        }
+
+        @keyframes lookAround {
+            0%, 100% { transform: translate(-50%, -50%); }
+            25% { transform: translate(-70%, -40%); }
+            50% { transform: translate(-30%, -60%); }
+            75% { transform: translate(-70%, -60%); }
+        }
+
+        /* Controles */
+        .controls {
+            margin-top: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .input-group {
+            margin: 20px 0;
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .status {
+            margin: 15px 0;
+            font-weight: bold;
+            color: #666;
+        }
+
+        .chat-log {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            max-height: 200px;
+            overflow-y: auto;
+            text-align: left;
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 8px 12px;
+            border-radius: 10px;
+        }
+
+        .user-message {
+            background: #e3f2fd;
+            margin-left: 20px;
+        }
+
+        .assistant-message {
+            background: #f3e5f5;
+            margin-right: 20px;
+        }
+
+        .voice-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="assistant-container">
+        <h1>Asistente de cafeteria</h1>
+        
+        <div class="avatar-container">
+            <div class="avatar" id="avatar">
+                <div class="hat">
+                    <div class="hat-brim"></div>
+                    <div class="hat-top">
+                        <div class="hat-stripe"></div>
+                    </div>
+                </div>
+                <div class="head">
+                    <div class="handle"></div>
+                    <div class="eyes">
+                        <div class="eye left">
+                            <div class="pupil"></div>
+                        </div>
+                        <div class="eye right">
+                            <div class="pupil"></div>
+                        </div>
+                    </div>
+                    <div class="nose"></div>
+                    <div class="mouth" id="mouth"></div>
+                </div>
+                <div class="body">
+                    <div class="body-buttons">
+                        <div class="button top"></div>
+                        <div class="button left"></div>
+                        <div class="button right"></div>
+                    </div>
+                </div>
+                <div class="arms">
+                    <div class="arm left">
+                        <div class="hand left"></div>
+                    </div>
+                    <div class="arm right">
+                        <div class="hand right"></div>
+                    </div>
+                </div>
+                <div class="legs">
+                    <div class="leg left">
+                        <div class="shoe left"></div>
+                    </div>
+                    <div class="leg right">
+                        <div class="shoe right"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="status" id="status">Listo para conversar</div>
+
+        <div class="input-group">
+            <input type="text" class="text-input" id="textInput" placeholder="Escribe tu mensaje aquí...">
+            <div class="voice-controls">
+                <button class="btn" id="sendBtn">Enviar</button>
+                <button class="btn" id="stopBtn" disabled>⏹ Detener</button>
+            </div>
+        </div>
+
+
+
+        <div class="chat-log" id="chatLog"></div>
+    </div>
+
+    <script>
+        class VirtualAssistant {
+            constructor() {
+                this.avatar = document.getElementById('avatar');
+                this.mouth = document.getElementById('mouth');
+                this.status = document.getElementById('status');
+                this.chatLog = document.getElementById('chatLog');
+                this.textInput = document.getElementById('textInput');
+                this.sendBtn = document.getElementById('sendBtn');
+                this.voiceBtn = null;
+                this.stopBtn = document.getElementById('stopBtn');
+                this.volumeSlider = null;
+                this.volumeValue = null;
+
+                this.recognition = null;
+                this.synthesis = window.speechSynthesis;
+                this.currentUtterance = null;
+                this.isListening = false;
+                this.isSpeaking = false;
+
+                this.responses = {
+                    "hola": "¡Hola! ¿Cómo estás hoy?",
+                    "como estas": "¡Estoy muy bien, gracias por preguntar! ¿En qué puedo ayudarte?",
+                    "que tal": "¡Todo perfecto! ¿Y tú qué tal?",
+                    "buenos dias": "¡Buenos días! ¡Qué gusto saludarte!",
+                    "buenas tardes": "¡Buenas tardes! ¿Cómo va tu día?",
+                    "buenas noches": "¡Buenas noches! Espero que hayas tenido un buen día.",
+                    "como te llamas": "Soy tu asistente virtual. ¡Puedes llamarme como gustes!",
+                    "que puedes hacer": "Puedo conversar contigo, responder preguntas básicas y mostrar diferentes expresiones. ¡Pregúntame lo que quieras!",
+                    "gracias": "¡De nada! Siempre es un placer ayudarte.",
+                    "adios": "¡Hasta luego! Que tengas un excelente día.",
+                    "bye": "¡Bye! ¡Nos vemos pronto!",
+                    "help": "Puedes escribirme o hablarme usando el botón de micrófono. También puedo cambiar mis expresiones faciales.",
+                    "ayuda": "¡Claro! Puedes escribirme o usar el micrófono para hablarme. También observa cómo cambian mis expresiones.",
+                    "tiempo": "No tengo acceso a información meteorológica en tiempo real, pero espero que tengas un clima agradable.",
+                    "hora": `Son aproximadamente las ${new Date().toLocaleTimeString()}.`,
+                    "fecha": `Hoy es ${new Date().toLocaleDateString()}.`
+                };
+
+                this.initializeSpeechRecognition();
+                this.initializeEventListeners();
+                this.startIdleAnimation();
+            }
+
+            initializeSpeechRecognition() {
+                if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    this.recognition = new SpeechRecognition();
+                    this.recognition.continuous = false;
+                    this.recognition.interimResults = false;
+                    this.recognition.lang = 'es-ES';
+
+                    this.recognition.onstart = () => {
+                        this.isListening = true;
+                        this.setStatus('Escuchando...');
+                        this.stopBtn.disabled = false;
+                    };
+
+                    this.recognition.onresult = (event) => {
+                        const transcript = event.results[0][0].transcript;
+                        this.textInput.value = transcript;
+                        this.addMessage(transcript, 'user');
+                        this.processMessage(transcript);
+                    };
+
+                    this.recognition.onerror = (event) => {
+                        this.setStatus(`Error: ${event.error}`);
+                        this.stopListening();
+                    };
+
+                    this.recognition.onend = () => {
+                        this.stopListening();
+                    };
+                } else {
+                    this.voiceBtn = null;
+                    console.log('Speech recognition not supported');
+                }
+            }
+
+            initializeEventListeners() {
+                this.sendBtn.addEventListener('click', () => {
+                    const message = this.textInput.value.trim();
+                    if (message) {
+                        this.addMessage(message, 'user');
+                        this.processMessage(message);
+                        this.textInput.value = '';
+                    }
+                });
+
+                this.textInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.sendBtn.click();
+                    }
+                });
+
+                this.stopBtn.addEventListener('click', () => {
+                    this.stopSpeaking();
+                });
+            }
+
+            startListening() {
+                if (this.recognition && !this.isListening) {
+                    this.recognition.start();
+                }
+            }
+
+            stopListening() {
+                if (this.recognition && this.isListening) {
+                    this.recognition.stop();
+                    this.isListening = false;
+                    this.stopBtn.disabled = true;
+                    this.setStatus('Listo para conversar');
+                }
+            }
+
+            processMessage(message) {
+                this.setStatus('Pensando...');
+
+                setTimeout(() => {
+                    const response = this.generateResponse(message.toLowerCase());
+                    this.addMessage(response, 'assistant');
+                    this.speak(response);
+                }, 1000);
+            }
+
+            generateResponse(message) {
+                // Buscar palabras clave en el mensaje
+                for (let key in this.responses) {
+                    if (message.includes(key)) {
+                        return this.responses[key];
+                    }
+                }
+
+                // Respuestas por defecto más inteligentes
+                if (message.includes('nombre') || message.includes('quien eres')) {
+                    return "Soy tu asistente virtual personal. Estoy aquí para ayudarte y conversar contigo.";
+                } else if (message.includes('edad')) {
+                    return "Soy tan joven como nuestro proyecto juntos. ¡Recién nacido digitalmente!";
+                } else if (message.includes('color') && message.includes('favorito')) {
+                    return "Me gustan mucho los colores vibrantes, especialmente el naranja de mi cuerpo.";
+                } else if (message.includes('musica')) {
+                    return "¡Me encanta la música! Aunque no puedo escucharla, me imagino que debe ser maravillosa.";
+                } else if (message.includes('comida')) {
+                    return "No como, pero si pudiera, creo que me gustarían los circuitos con salsa de código.";
+                } else if (message.includes('feliz') || message.includes('contento')) {
+                    return "¡Me alegra saber que estás feliz! La alegría es contagiosa.";
+                } else if (message.includes('triste')) {
+                    return "Lamento que te sientas triste. ¿Hay algo en lo que pueda ayudarte?";
+                } else {
+                    return "Interesante lo que me dices. Cuéntame más sobre eso, me gusta conversar contigo.";
+                }
+            }
+
+            speak(text) {
+                if (this.synthesis) {
+                    this.stopSpeaking();
+                    
+                    this.currentUtterance = new SpeechSynthesisUtterance(text);
+                    this.currentUtterance.lang = 'es-ES';
+                    this.currentUtterance.rate = 0.9;
+                    this.currentUtterance.pitch = 1.1;
+                    this.currentUtterance.volume = 0.7;
+
+                    this.currentUtterance.onstart = () => {
+                        this.isSpeaking = true;
+                        this.setStatus('Hablando...');
+                        this.startSpeakingAnimation();
+                        this.stopBtn.disabled = false;
+                    };
+
+                    this.currentUtterance.onend = () => {
+                        this.stopSpeakingAnimation();
+                        this.setStatus('Listo para conversar');
+                        this.isSpeaking = false;
+                        this.stopBtn.disabled = true;
+                        this.startIdleAnimation();
+                    };
+
+                    this.currentUtterance.onerror = () => {
+                        this.stopSpeakingAnimation();
+                        this.setStatus('Error al hablar');
+                        this.isSpeaking = false;
+                        this.stopBtn.disabled = true;
+                    };
+
+                    this.synthesis.speak(this.currentUtterance);
+                }
+            }
+
+            stopSpeaking() {
+                if (this.synthesis && this.isSpeaking) {
+                    this.synthesis.cancel();
+                    this.stopSpeakingAnimation();
+                    this.isSpeaking = false;
+                    this.stopBtn.disabled = true;
+                    this.setStatus('Listo para conversar');
+                }
+            }
+
+            startSpeakingAnimation() {
+                this.avatar.classList.add('speaking');
+                this.mouth.classList.add('talking');
+            }
+
+            stopSpeakingAnimation() {
+                this.avatar.classList.remove('speaking');
+                this.mouth.classList.remove('talking');
+            }
+
+            startIdleAnimation() {
+                // Animación sutil de espera sin cambiar expresiones
+                if (!this.isSpeaking && !this.isListening) {
+                    // Solo mantiene el estado neutral
+                }
+            }
+
+            setStatus(text) {
+                this.status.textContent = text;
+            }
+
+            addMessage(text, sender) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}-message`;
+                messageDiv.textContent = `${sender === 'user' ? 'Tú' : 'Asistente'}: ${text}`;
+                this.chatLog.appendChild(messageDiv);
+                this.chatLog.scrollTop = this.chatLog.scrollHeight;
+            }
+
+        }
+
+        // Inicializar el asistente
+        const assistant = new VirtualAssistant();
+    </script>
+</body>
+</html>
