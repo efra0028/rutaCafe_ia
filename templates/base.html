@@ -9,16 +9,30 @@
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="{% static 'css/avatar.css' %}" rel="stylesheet">
+    <link href="{% static 'css/modern-chat.css' %}?v=2" rel="stylesheet">
     
     <!-- Avatar CSS Styles -->
     <style>
         /* Avatar CSS Styles - Mini Version */
+       
         .avatar-mini {
             position: relative;
             width: 40px;
             height: 56px;
-            transform: scale(0.8);
-            transition: all 0.3s ease;
+            --avatar-scale: 2.5;
+            transform: translateY(0) scale(var(--avatar-scale));
+            transform-origin: center top;
+            transition: transform 0.3s ease;
+        }
+
+        #chatbot-toggle .avatar-mini {
+            --avatar-scale: 0.8;
+        }
+
+        /* Avatar en el header del chat modal */
+        .chat-avatar .avatar-mini {
+            --avatar-scale: 0.9;
+            transform: translateY(5px) scale(var(--avatar-scale));
         }
 
         /* Sombrero */
@@ -351,13 +365,56 @@
             animation: bounceMini 0.5s ease-in-out infinite alternate;
         }
 
+        /* Animaciones específicas para el avatar en el header del chat */
+        .chat-avatar .avatar-mini.speaking {
+            animation: bounceMiniChat 0.5s ease-in-out infinite alternate;
+        }
+
         @keyframes bounceMini {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(-1px); }
+            0% { transform: translateY(0) scale(var(--avatar-scale)); }
+            100% { transform: translateY(-1px) scale(var(--avatar-scale)); }
+        }
+
+        @keyframes bounceMiniChat {
+            0% { transform: translateY(-2px) scale(var(--avatar-scale)); }
+            100% { transform: translateY(-3px) scale(var(--avatar-scale)); }
         }
 
         .avatar-mini.listening .pupil {
             animation: lookAroundMini 2s ease-in-out infinite;
+        }
+
+        /* Expresiones adicionales */
+        .avatar-mini.happy .mouth {
+            border-radius: 0 0 50% 50%;
+            height: 3px;
+            background: #8B4513;
+        }
+
+        .avatar-mini.sad .mouth {
+            border-radius: 50% 50% 0 0;
+            border-bottom: none;
+            border-top: 1px solid #8B4513;
+            height: 2px;
+            background: none;
+        }
+
+        .avatar-mini.surprised .eyes {
+            animation: widenEyes 0.5s ease-in-out;
+        }
+
+        .avatar-mini.thinking .pupil {
+            animation: thinkingLook 3s ease-in-out infinite;
+        }
+
+        @keyframes widenEyes {
+            0%, 100% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.2); }
+        }
+
+        @keyframes thinkingLook {
+            0%, 100% { transform: translate(-30%, -30%); }
+            50% { transform: translate(-70%, -70%); }
         }
 
         @keyframes lookAroundMini {
@@ -506,115 +563,69 @@
         </div>
 
         <!-- Chatbot Modal -->
-        <div id="chatbot-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
-            <div class="flex items-center justify-center min-h-screen p-4">
-                <div class="bg-white rounded-lg shadow-xl w-full max-w-md h-96 flex flex-col">
-                    <!-- Chat Header -->
-                    <div class="bg-coffee-600 text-white p-4 rounded-t-lg flex justify-between items-center">
-                        <div class="flex items-center space-x-3">
-                            <!-- Avatar CSS en el header -->
-                            <div id="avatar-header-container" class="w-10 h-10 rounded-full overflow-hidden bg-coffee-700 flex items-center justify-center">
-                                <div id="avatar-header" class="avatar-mini">
-                                    <div class="hat">
-                                        <div class="hat-brim"></div>
-                                        <div class="hat-top">
-                                            <div class="hat-stripe"></div>
-                                        </div>
-                                    </div>
-                                    <div class="head">
-                                        <div class="handle"></div>
-                                        <div class="eyes">
-                                            <div class="eye left">
-                                                <div class="pupil"></div>
-                                            </div>
-                                            <div class="eye right">
-                                                <div class="pupil"></div>
-                                            </div>
-                                        </div>
-                                        <div class="nose"></div>
-                                        <div class="mouth" id="mouth-header"></div>
-                                    </div>
-                                    <div class="body">
-                                        <div class="body-buttons">
-                                            <div class="button top"></div>
-                                            <div class="button left"></div>
-                                            <div class="button right"></div>
-                                        </div>
-                                    </div>
-                                    <div class="arms">
-                                        <div class="arm left">
-                                            <div class="hand left"></div>
-                                        </div>
-                                        <div class="arm right">
-                                            <div class="hand right"></div>
-                                        </div>
-                                    </div>
-                                    <div class="legs">
-                                        <div class="leg left">
-                                            <div class="shoe left"></div>
-                                        </div>
-                                        <div class="leg right">
-                                            <div class="shoe right"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <h3 class="text-lg font-semibold">
-                                Asistente de Café
-                            </h3>
+        <div id="chatbot-modal" class="chat-container">
+            <div class="chat-wrapper">
+                <div class="chat-header">
+                    <div class="chat-avatar">
+                        <div class="avatar-mini" id="modal-avatar">
+                            <!-- Avatar content -->
+                            <div class="hat"><div class="hat-brim"></div><div class="hat-top"><div class="hat-stripe"></div></div></div>
+                            <div class="head"><div class="handle"></div><div class="eyes"><div class="eye left"><div class="pupil"></div></div><div class="eye right"><div class="pupil"></div></div></div><div class="nose"></div><div class="mouth"></div></div>
+                            <div class="body"><div class="body-buttons"><div class="button top"></div><div class="button left"></div><div class="button right"></div></div></div>
+                            <div class="arms"><div class="arm left"><div class="hand left"></div></div><div class="arm right"><div class="hand right"></div></div></div>
+                            <div class="legs"><div class="leg left"><div class="shoe left"></div></div><div class="leg right"><div class="shoe right"></div></div></div>
                         </div>
-                        <button id="chatbot-close" class="text-white hover:text-coffee-200">
+                    </div>
+                    <div class="chat-header-info">
+                        <h1 class="chat-header-title">¡Hola! Soy tu Asistente Virtual</h1>
+                        <p class="chat-header-subtitle">Tu asistente virtual de cafeterías en Sucre</p>
+                    </div>
+                    <div class="chat-actions">
+                        <button id="chatbot-close" class="btn-header">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
-                    
-                    <!-- Chat Messages -->
-                    <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-3">
-                        <div class="bg-gray-100 p-3 rounded-lg">
-                            <p class="text-sm text-gray-600">
-                                <i class="fas fa-robot mr-1"></i>
-                                ¡Hola! Soy tu asistente virtual de cafeterías. Te ayudo a crear una ruta personalizada de 4 cafeterías en Sucre. ¿Qué tipo de café te gustaría probar?
-                            </p>
+                </div>
+                
+                <div id="chat-messages" class="chat-messages">
+                    <!-- Welcome message -->
+                    <div class="welcome-message">
+                        <div class="welcome-layout">
+                            <div class="welcome-avatar">
+                                <div class="avatar-mini" id="welcome-avatar">
+                                    <!-- Avatar content -->
+                                    <div class="hat"><div class="hat-brim"></div><div class="hat-top"><div class="hat-stripe"></div></div></div>
+                                    <div class="head"><div class="handle"></div><div class="eyes"><div class="eye left"><div class="pupil"></div></div><div class="eye right"><div class="pupil"></div></div></div><div class="nose"></div><div class="mouth"></div></div>
+                                    <div class="body"><div class="body-buttons"><div class="button top"></div><div class="button left"></div><div class="button right"></div></div></div>
+                                    <div class="arms"><div class="arm left"><div class="hand left"></div></div><div class="arm right"><div class="hand right"></div></div></div>
+                                    <div class="legs"><div class="leg left"><div class="shoe left"></div></div><div class="leg right"><div class="shoe right"></div></div></div>
+                                </div>
+                            </div>
+                            <div class="welcome-content">
+                                <h2 class="welcome-title">¡Hola! Soy tu Asistente Virtual</h2>
+                                <p class="welcome-subtitle">Tu asistente virtual para encontrar las mejores cafeterías en Sucre</p>
+                                <div class="welcome-suggestions">
+                                    <button class="suggestion-button" onclick="sendModalSuggestion('¿Qué cafeterías me recomiendas?')">¿Qué cafeterías me recomiendas?</button>
+                                    <button class="suggestion-button" onclick="sendModalSuggestion('Busco una cafetería cerca de mi ubicación')">Busco una cafetería cerca de mi ubicación</button>
+                                    <button class="suggestion-button" onclick="sendModalSuggestion('¿Cuáles tienen el mejor café?')">¿Cuáles tienen el mejor café?</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    
-                    <!-- Chat Input -->
-                    <div class="p-4 border-t">
-                        <div class="flex space-x-2">
-                            <input type="text" id="chat-input" placeholder="Escribe tu mensaje..." 
-                                   class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-coffee-500">
-                            <button id="chat-voice" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200" title="Hablar">
-                                <i class="fas fa-microphone"></i>
-                            </button>
-                            <button id="chat-send" class="bg-coffee-600 hover:bg-coffee-700 text-white px-4 py-2 rounded-lg transition duration-200">
-                                <i class="fas fa-paper-plane"></i>
-                            </button>
-                        </div>
-                        <div class="mt-2 flex items-center justify-between">
-                            <label class="flex items-center text-sm text-gray-600">
-                                <input type="checkbox" id="voice-response" class="mr-2">
-                                <i class="fas fa-volume-up mr-1"></i>
-                                Respuesta por voz
-                            </label>
-                            <div id="voice-status" class="text-xs text-gray-500">
-                                Voz mejorada activada
-                            </div>
-                <!-- <div class="flex items-center space-x-2">
-                    <button id="voice-stop" class="text-red-500 hover:text-red-700 text-sm" title="Detener voz">
-                        <i class="fas fa-stop"></i>
-                    </button>
-                    <button id="voice-test" class="text-blue-500 hover:text-blue-700 text-sm" title="Probar voz">
-                        <i class="fas fa-play"></i>
-                    </button>
-                    <button id="voice-debug" class="text-green-500 hover:text-green-700 text-sm" title="Debug voz">
-                        <i class="fas fa-bug"></i>
-                    </button>
-                    <button id="avatar-test" class="text-purple-500 hover:text-purple-700 text-sm" title="Probar avatar">
-                        <i class="fas fa-smile"></i>
-                    </button>
-                </div> -->
-                        </div>
-                      
+                </div>
+                
+                <div class="chat-input">
+                    <div class="input-container">
+                        <input type="text" id="chat-input" placeholder="Enter your question" class="message-input">
+                        <button id="chat-voice" class="send-button" style="margin-right: 5px;" title="Hablar"><i class="fas fa-microphone"></i></button>
+                        <button id="chat-send" class="send-button"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                    <div class="mt-2 flex items-center justify-between">
+                        <label class="flex items-center text-sm text-gray-600">
+                            <input type="checkbox" id="voice-response" class="mr-2">
+                            <i class="fas fa-volume-up mr-1"></i>
+                            Respuesta por voz
+                        </label>
                     </div>
                 </div>
             </div>
@@ -641,19 +652,36 @@
             
             // Los avatares ya están en el HTML, solo necesitamos configurar los event listeners
             console.log('✅ Avatar CSS listo');
+            
+            // Prueba inicial de expresión para verificar que funciona
+            setTimeout(() => {
+                console.log('🎭 Probando expresión inicial...');
+                setAvatarExpression('happy');
+                setTimeout(() => setAvatarExpression('idle'), 2000);
+            }, 1000);
         }
         
         // Controlar expresiones del avatar
         function setAvatarExpression(expression) {
-            const avatar = document.getElementById('avatar');
-            const avatarHeader = document.getElementById('avatar-header');
-            const mouth = document.getElementById('mouth');
-            const mouthHeader = document.getElementById('mouth-header');
+            const avatarModal = document.getElementById('modal-avatar');
+            const avatarWelcome = document.getElementById('welcome-avatar');
+            const avatarButton = document.getElementById('avatar'); // Avatar del botón flotante
+            const avatarsMessages = document.querySelectorAll('.message-cafebot');
             
             console.log('😊 Cambiando expresión a:', expression);
+            console.log('🎯 Avatares encontrados:', {
+                modal: !!avatarModal,
+                welcome: !!avatarWelcome, 
+                button: !!avatarButton,
+                messages: avatarsMessages.length
+            });
+            
+            // Lista de todos los avatares
+            const allAvatars = [avatarModal, avatarWelcome, avatarButton, ...avatarsMessages].filter(av => av !== null);
+            console.log('📊 Total avatares activos:', allAvatars.length);
             
             // Remover todas las clases de expresión
-            [avatar, avatarHeader].forEach(av => {
+            allAvatars.forEach(av => {
                 if (av) {
                     av.classList.remove('happy', 'sad', 'surprised', 'thinking', 'speaking', 'listening');
                 }
@@ -662,67 +690,119 @@
             // Aplicar nueva expresión
             switch(expression) {
                 case 'speaking':
-                    [avatar, avatarHeader].forEach(av => {
-                        if (av) av.classList.add('speaking');
-                    });
-                    [mouth, mouthHeader].forEach(m => {
-                        if (m) m.classList.add('talking');
+                    console.log('🗣️ Aplicando expresión: HABLANDO');
+                    allAvatars.forEach(av => {
+                        if (av) {
+                            av.classList.add('speaking');
+                            // Agregar animación a las bocas
+                            const mouth = av.querySelector('.mouth');
+                            if (mouth) {
+                                mouth.classList.add('talking');
+                                console.log('👄 Boca animada para avatar');
+                            }
+                        }
                     });
                     isSpeaking = true;
                     break;
                 case 'idle':
-                    [avatar, avatarHeader].forEach(av => {
-                        if (av) av.classList.remove('speaking', 'listening');
-                    });
-                    [mouth, mouthHeader].forEach(m => {
-                        if (m) m.classList.remove('talking');
+                    console.log('😐 Aplicando expresión: IDLE');
+                    allAvatars.forEach(av => {
+                        if (av) {
+                            av.classList.remove('speaking', 'listening');
+                            // Quitar animación a las bocas
+                            const mouth = av.querySelector('.mouth');
+                            if (mouth) {
+                                mouth.classList.remove('talking');
+                            }
+                        }
                     });
                     isSpeaking = false;
                     break;
                 case 'listening':
-                    [avatar, avatarHeader].forEach(av => {
+                    console.log('👂 Aplicando expresión: ESCUCHANDO');
+                    allAvatars.forEach(av => {
                         if (av) av.classList.add('listening');
                     });
                     isListening = true;
                     break;
                 case 'happy':
-                    [avatar, avatarHeader].forEach(av => {
+                    console.log('😊 Aplicando expresión: FELIZ');
+                    allAvatars.forEach(av => {
                         if (av) av.classList.add('happy');
                     });
                     break;
                 case 'sad':
-                    [avatar, avatarHeader].forEach(av => {
+                    console.log('😞 Aplicando expresión: TRISTE');
+                    allAvatars.forEach(av => {
                         if (av) av.classList.add('sad');
                     });
                     break;
                 case 'surprised':
-                    [avatar, avatarHeader].forEach(av => {
+                    console.log('😲 Aplicando expresión: SORPRENDIDO');
+                    allAvatars.forEach(av => {
                         if (av) av.classList.add('surprised');
                     });
                     break;
                 case 'thinking':
-                    [avatar, avatarHeader].forEach(av => {
+                    console.log('🤔 Aplicando expresión: PENSANDO');
+                    allAvatars.forEach(av => {
                         if (av) av.classList.add('thinking');
                     });
                     break;
+                default:
+                    console.log('❓ Expresión desconocida:', expression);
             }
         }
         
         // Sincronizar con voz
         function syncAvatarWithVoice(speaking) {
+            console.log('🎤 Sincronizando avatar con voz:', speaking ? 'HABLANDO' : 'SILENCIO');
             if (speaking) {
                 setAvatarExpression('speaking');
             } else {
                 setAvatarExpression('idle');
             }
         }
-        
+
+        // Mejorar la función speakText para mejor integración con avatar
+        function speakText(text) {
+            console.log('🔊 speakText llamado con:', text.substring(0, 50));
+            
+            // Activar expresión de habla en el avatar inmediatamente
+            console.log('🎭 Activando expresión de habla...');
+            syncAvatarWithVoice(true);
+            
+            // SIEMPRE intentar Polly primero
+            console.log('🎤 Intentando Amazon Polly directamente...');
+            speakWithPolly(text);
+        }
+
         // Inicializar avatar cuando el DOM esté listo
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Inicializando sistema de avatar...');
             initAvatarCSS();
+            
+            // Prueba inicial después de un breve delay
+            setTimeout(() => {
+                console.log('🧪 Realizando prueba inicial del avatar...');
+                setAvatarExpression('happy');
+                setTimeout(() => {
+                    setAvatarExpression('idle');
+                    console.log('✅ Sistema de avatar inicializado correctamente');
+                }, 1500);
+            }, 1000);
         });
 
-        // Chatbot functionality
+        // También inicializar inmediatamente si el DOM ya está listo
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('🚀 DOM loaded - iniciando avatar...');
+                initAvatarCSS();
+            });
+        } else {
+            console.log('🚀 DOM ready - iniciando avatar inmediatamente...');
+            initAvatarCSS();
+        }
         document.addEventListener('DOMContentLoaded', function() {
             const chatbotToggle = document.getElementById('chatbot-toggle');
             const chatbotModal = document.getElementById('chatbot-modal');
@@ -733,27 +813,168 @@
 
             if (chatbotToggle) {
                 chatbotToggle.addEventListener('click', function() {
-                    chatbotModal.classList.remove('hidden');
+                    chatbotModal.classList.toggle('visible');
                 });
             }
 
-            if (chatbotClose) {
-                chatbotClose.addEventListener('click', function() {
-                    chatbotModal.classList.add('hidden');
-                });
+            // Función para cerrar chat y detener audio
+            function closeChatAndStopAudio() {
+                console.log('🔇 Cerrando chat - deteniendo audio...');
+                
+                // Detener audio de Amazon Polly si está reproduciéndose
+                if (currentAudio) {
+                    console.log('⏹️ Deteniendo audio de Polly...');
+                    currentAudio.pause();
+                    currentAudio.currentTime = 0;
+                    currentAudio = null;
+                }
+                
+                // Detener síntesis de voz del navegador
+                if ('speechSynthesis' in window && speechSynthesis.speaking) {
+                    console.log('⏹️ Deteniendo síntesis de voz...');
+                    speechSynthesis.cancel();
+                }
+                
+                // Resetear avatar a estado idle
+                console.log('😐 Reseteando avatar a idle...');
+                setAvatarExpression('idle');
+                
+                // Cerrar modal
+                chatbotModal.classList.remove('visible');
+                
+                console.log('✅ Chat cerrado y audio detenido');
             }
+
+            // Cerrar con botón X
+            if (chatbotClose) {
+                chatbotClose.addEventListener('click', closeChatAndStopAudio);
+            }
+
+            // Cerrar con tecla Escape
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && chatbotModal.classList.contains('visible')) {
+                    closeChatAndStopAudio();
+                }
+            });
+
+            // Cerrar haciendo clic fuera del chat (opcional)
+            chatbotModal.addEventListener('click', function(e) {
+                if (e.target === chatbotModal) {
+                    closeChatAndStopAudio();
+                }
+            });
 
             function addMessage(content, isUser = false) {
                 const messageDiv = document.createElement('div');
-                messageDiv.className = isUser ? 
-                    'bg-coffee-600 text-white p-3 rounded-lg ml-8' : 
-                    'bg-gray-100 p-3 rounded-lg mr-8';
+                messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
                 
-                const icon = isUser ? 'fas fa-user' : 'fas fa-robot';
-                messageDiv.innerHTML = `<p class="text-sm"><i class="${icon} mr-1"></i>${content}</p>`;
+                const currentTime = new Date().toLocaleTimeString('es-ES', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                
+                messageDiv.innerHTML = `
+                    <div class="message-content">
+                        <div class="message-avatar">
+                            ${isUser ? '<i class="fas fa-user"></i>' : `
+                                <div class="avatar-mini message-cafebot">
+                                    <div class="hat">
+                                        <div class="hat-top">
+                                            <div class="hat-stripe"></div>
+                                        </div>
+                                        <div class="hat-brim"></div>
+                                    </div>
+                                    <div class="head">
+                                        <div class="handle"></div>
+                                        <div class="eyes">
+                                            <div class="eye left">
+                                                <div class="pupil"></div>
+                                            </div>
+                                            <div class="eye right">
+                                                <div class="pupil"></div>
+                                            </div>
+                                        </div>
+                                        <div class="nose"></div>
+                                        <div class="mouth"></div>
+                                    </div>
+                                    <div class="body">
+                                        <div class="body-buttons">
+                                            <div class="button top"></div>
+                                            <div class="button left"></div>
+                                            <div class="button right"></div>
+                                        </div>
+                                    </div>
+                                    <div class="arms">
+                                        <div class="arm left">
+                                            <div class="hand left"></div>
+                                        </div>
+                                        <div class="arm right">
+                                            <div class="hand right"></div>
+                                        </div>
+                                    </div>
+                                    <div class="legs">
+                                        <div class="leg left">
+                                            <div class="shoe left"></div>
+                                        </div>
+                                        <div class="leg right">
+                                            <div class="shoe right"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `}
+                        </div>
+                        <div class="message-bubble">
+                            <p class="message-text">${content}</p>
+                            <div class="message-time">${currentTime}</div>
+                        </div>
+                    </div>
+                `;
                 
                 chatMessages.appendChild(messageDiv);
                 chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                // Remove welcome message if it exists
+                const welcomeMessage = chatMessages.querySelector('.welcome-message');
+                if (welcomeMessage) {
+                    welcomeMessage.remove();
+                }
+
+                // Activar expresiones en el nuevo avatar del mensaje
+                if (!isUser) {
+                    console.log('🎭 Nuevo avatar de mensaje creado');
+                    setTimeout(() => {
+                        const newAvatar = messageDiv.querySelector('.message-cafebot');
+                        if (newAvatar) {
+                            // Aplicar expresión actual
+                            if (document.querySelector('.avatar-mini.happy')) {
+                                newAvatar.classList.add('happy');
+                            }
+                            if (document.querySelector('.avatar-mini.speaking')) {
+                                newAvatar.classList.add('speaking');
+                            }
+                        }
+                    }, 100);
+                }
+            }
+
+            function showTypingIndicator() {
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'typing-indicator';
+                typingDiv.id = 'typing-indicator';
+                typingDiv.innerHTML = `
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                `;
+                chatMessages.appendChild(typingDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            function hideTypingIndicator() {
+                const typingIndicator = document.getElementById('typing-indicator');
+                if (typingIndicator) {
+                    typingIndicator.remove();
+                }
             }
 
             // Voice recognition
@@ -811,13 +1032,14 @@
             // Cargar voces de Amazon Polly al iniciar
             function loadPollyVoices() {
                 console.log('🔊 Cargando voces de Amazon Polly...');
+                console.log('🔧 DEBUG: Verificando endpoint /chat/obtener-voces/');
                 fetch('/chat/obtener-voces/')
                     .then(response => {
-                        console.log('📡 Respuesta de voces:', response.status);
+                        console.log('📡 Respuesta de voces status:', response.status);
                         return response.json();
                     })
                     .then(data => {
-                        console.log('📊 Datos recibidos:', data);
+                        console.log('📊 Datos de voces recibidos:', data);
                         if (data.success) {
                             pollyAvailable = data.polly_available;
                             availableVoices = data.voices;
@@ -826,36 +1048,33 @@
                             
                            
                         } else {
-                            console.log('❌ Error en respuesta de voces:', data);
-                            updateVoiceStatus('Voz del navegador activada');
+                            console.error('❌ Error obteniendo voces:', data.error);
+                            updateVoiceStatus('Error - usando voz del navegador');
+                            pollyAvailable = false;
                         }
                     })
                     .catch(error => {
                         console.error('❌ Error cargando voces:', error);
-                        updateVoiceStatus('Voz del navegador activada');
+                        updateVoiceStatus('Error de conexión - voz del navegador');
+                        pollyAvailable = false;
                     });
             }
 
             function speakText(text) {
                 console.log('🔊 speakText llamado con:', text.substring(0, 50));
-                console.log('🔊 pollyAvailable:', pollyAvailable);
                 
                 // Activar expresión de habla en el avatar
                 syncAvatarWithVoice(true);
                 
-                // Intentar Polly primero, fallback a navegador
-                if (pollyAvailable) {
-                    console.log('🎤 Intentando Amazon Polly...');
-                    speakWithPolly(text);
-                } else {
-                    console.log('🌐 Polly no disponible, usando voz del navegador');
-                    speakWithBrowser(text);
-                }
+                // SIEMPRE intentar Polly primero
+                console.log('🎤 Intentando Amazon Polly directamente...');
+                speakWithPolly(text);
             }
 
             // Usar Amazon Polly para voz profesional
             function speakWithPolly(text) {
                 console.log('🎤 Iniciando Polly con texto:', text.substring(0, 50));
+                console.log('🔧 DEBUG: Enviando solicitud a /chat/generar-audio/');
                 updateVoiceStatus('Generando audio profesional...');
                 
                 fetch('/chat/generar-audio/', {
@@ -867,22 +1086,29 @@
                     body: JSON.stringify({ text: text })
                 })
                 .then(response => {
-                    console.log('📡 Respuesta Polly:', response.status);
+                    console.log('📡 Respuesta Polly status:', response.status);
+                    console.log('📡 Respuesta Polly headers:', response.headers);
                     return response.json();
                 })
                 .then(data => {
-                    console.log('📊 Datos Polly:', data);
+                    console.log('📊 Datos completos de Polly:', data);
                     if (data.success) {
-                        console.log('✅ Audio generado con Polly, tamaño:', data.audio ? data.audio.length : 'N/A');
+                        console.log('✅ Audio generado con Polly exitosamente');
+                        console.log('🎵 Tamaño del audio:', data.audio ? data.audio.length : 'N/A');
+                        console.log('🎤 Voz utilizada:', data.voice_used);
                         playPollyAudio(data.audio);
                         updateVoiceStatus(`Amazon Polly - ${data.voice_used}`);
                     } else {
-                        console.warn('❌ Polly falló, usando navegador:', data.error);
+                        console.warn('❌ Polly falló, razón:', data.error);
+                        console.log('🔄 Cambiando a voz del navegador como fallback');
+                        updateVoiceStatus('Polly falló - usando navegador');
                         speakWithBrowser(text);
                     }
                 })
                 .catch(error => {
-                    console.error('❌ Error con Polly:', error);
+                    console.error('❌ Error completo con Polly:', error);
+                    console.log('🔄 Error de red o servidor - usando voz del navegador');
+                    updateVoiceStatus('Error de conexión - usando navegador');
                     speakWithBrowser(text);
                 });
             }
@@ -930,6 +1156,8 @@
                     currentAudio.onplay = function() {
                         console.log('▶️ Audio iniciado');
                         updateVoiceStatus('Reproduciendo audio profesional...');
+                        // Activar expresión de habla del avatar
+                        syncAvatarWithVoice(true);
                     };
                     
                     currentAudio.onended = function() {
@@ -937,6 +1165,7 @@
                         updateVoiceStatus('Amazon Polly activado');
                         URL.revokeObjectURL(audioUrl);
                         // Desactivar expresión de habla
+                        console.log('🎭 Audio Polly terminado - desactivando expresión de habla');
                         syncAvatarWithVoice(false);
                     };
                     
@@ -1052,18 +1281,23 @@
                 utterance.onstart = function() {
                     console.log('▶️ Voz iniciada correctamente');
                     updateVoiceStatus('Reproduciendo...');
+                    // Activar expresión de habla del avatar
+                    syncAvatarWithVoice(true);
                 };
                 
                 utterance.onend = function() {
                     console.log('⏹️ Voz terminada correctamente');
                     updateVoiceStatus('Voz del navegador activada');
                     // Desactivar expresión de habla
+                    console.log('🎭 Desactivando expresión de habla - volviendo a idle');
                     syncAvatarWithVoice(false);
                 };
                 
                 utterance.onerror = function(event) {
                     console.error('❌ Error en voz:', event.error, event);
                     updateVoiceStatus('Error en voz: ' + event.error);
+                    // Desactivar expresión de habla en caso de error
+                    syncAvatarWithVoice(false);
                 };
                 
                 utterance.onpause = function() {
@@ -1189,6 +1423,13 @@
                 addMessage(message, true);
                 chatInput.value = '';
 
+                // Avatar muestra expresión de pensamiento mientras procesa
+                console.log('🤔 Avatar pensando...');
+                setAvatarExpression('thinking');
+
+                // Mostrar indicador de escritura
+                showTypingIndicator();
+
                 // Send to backend
                 fetch('/chat/enviar-mensaje/', {
                     method: 'POST',
@@ -1200,12 +1441,27 @@
                 })
                 .then(response => response.json())
                 .then(data => {
+                    // Ocultar indicador de escritura
+                    hideTypingIndicator();
+                    
                     if (data.success) {
+                        // Avatar muestra expresión feliz al recibir respuesta
+                        console.log('😊 Avatar feliz - respuesta recibida');
+                        setAvatarExpression('happy');
+                        
                         addMessage(data.mensaje_bot);
                         
-                        // Speak response if enabled
+                        // Si hay voz activada, avatar habla
                         if (document.getElementById('voice-response').checked) {
+                            console.log('🗣️ Avatar hablando...');
+                            setAvatarExpression('speaking');
                             speakText(data.mensaje_bot);
+                        } else {
+                            // Volver a idle después de un momento
+                            setTimeout(() => {
+                                console.log('😐 Avatar volviendo a idle');
+                                setAvatarExpression('idle');
+                            }, 2000);
                         }
                         
                         // If there are recommended cafeterías, show them
@@ -1236,12 +1492,19 @@
                             chatMessages.scrollTop = chatMessages.scrollHeight;
                         }
                     } else {
+                        console.log('😞 Avatar triste - error en respuesta');
+                        setAvatarExpression('sad');
                         addMessage('Lo siento, hubo un error. Por favor, inténtalo de nuevo.');
+                        setTimeout(() => setAvatarExpression('idle'), 2000);
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
+                    hideTypingIndicator();
+                    console.log('😞 Avatar triste - error de conexión');
+                    setAvatarExpression('sad');
                     addMessage('Lo siento, hubo un error. Por favor, inténtalo de nuevo.');
+                    setTimeout(() => setAvatarExpression('idle'), 2000);
                 });
             }
 
@@ -1294,6 +1557,15 @@
                     speakText(testText);
                 });
             }
+            
+            // Function for modal suggestion buttons
+            window.sendModalSuggestion = function(text) {
+                const chatInput = document.getElementById('chat-input');
+                if (chatInput) {
+                    chatInput.value = text;
+                    sendMessage();
+                }
+            };
             
             // Botón de debug
             const voiceDebug = document.getElementById('voice-debug');

@@ -140,3 +140,4 @@ AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default='')
 AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', default='')
 AWS_REGION = config('AWS_REGION', default='us-east-1')
 POLLY_VOICE_ID = config('POLLY_VOICE_ID', default='Lupe')  # Voz femenina en español
+USAR_POLLY_PARA_AUDIO = config('USAR_POLLY_PARA_AUDIO', default=True, cast=bool)

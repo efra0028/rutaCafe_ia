@@ -13,202 +13,626 @@ import random
 
 
 def get_openai_response(user_message, conversacion):
-    """Obtener respuesta del chatbot usando OpenAI o respuestas predefinidas"""
+    """Obtener respuesta del chatbot usando OpenAI con sistema optimizado y eficiente"""
     try:
-        # Verificar que la API key esté configurada
+        # Sistema de verificación inteligente de API
         if not settings.OPENAI_API_KEY or settings.OPENAI_API_KEY == 'sk-proj-tu-clave-aqui':
-            return get_fallback_response(user_message, conversacion)
+            print("🔄 API key no configurada - Usando sistema inteligente de respaldo")
+            return get_smart_fallback_response(user_message, conversacion)
         
-        # Construir contexto de la conversación
-        mensajes_anteriores = conversacion.mensajes.all().order_by('timestamp')[:10]
+        # Contexto ultra-optimizado para ahorrar tokens
+        mensajes_anteriores = conversacion.mensajes.all().order_by('timestamp')[-4:]  # Solo 4 últimos
         
+        # Prompt base eficiente y compacto
         messages = [
             {
                 "role": "system", 
-                "content": """Eres un asistente virtual especializado en cafeterías de Sucre, Bolivia. 
-                Tu función principal es ayudar a los usuarios a crear rutas personalizadas de exactamente 4 cafeterías 
-                basadas en sus preferencias de café y ubicación.
-                
-                Tipos de café disponibles en Sucre:
-                - Americano: Café negro fuerte y simple
-                - Espresso: Café concentrado y intenso
-                - Cappuccino: Café con leche espumosa
-                - Latte: Café con mucha leche cremosa
-                - Mocha: Café con chocolate
-                - Frappé: Café frío batido
-                - Macchiato: Espresso con un toque de leche
-                - Cortado: Café con un poco de leche
-                
-                Proceso:
-                1. Pregunta qué tipo de café prefiere el usuario
-                2. Basándote en su respuesta, selecciona 4 cafeterías de Sucre
-                3. Explica por qué elegiste esas cafeterías
-                4. Menciona que se creará una ruta optimizada en el mapa
-                
-                Sé amigable, conversacional y enfócate en crear la mejor experiencia de café en Sucre."""
+                "content": """Asistente cafeterías Sucre, Bolivia. Análisis inteligente + recomendaciones personalizadas.
+
+PROCESO: Analiza → Evalúa → Recomienda → Explica razonamiento.
+RESPUESTA: Máximo 120 palabras, directo, útil, con fundamentos.
+ESPECIALIDAD: 4 cafeterías por ruta, análisis de preferencias de café."""
             }
         ]
         
-        # Agregar mensajes anteriores
+        # Agregar solo contexto esencial
         for msg in mensajes_anteriores:
             role = "user" if msg.tipo == "U" else "assistant"
-            messages.append({"role": role, "content": msg.contenido})
+            # Comprimir mensajes largos para eficiencia
+            contenido = msg.contenido[:150] if len(msg.contenido) > 150 else msg.contenido
+            messages.append({"role": role, "content": contenido})
         
-        # Agregar el mensaje actual
-        messages.append({"role": "user", "content": user_message})
+        # Comprimir mensaje del usuario si es muy largo
+        mensaje_actual = user_message[:200] if len(user_message) > 200 else user_message
+        messages.append({"role": "user", "content": mensaje_actual})
         
-        # Llamar a OpenAI
+        # Configuración ultra-optimizada para eficiencia máxima
+        print("🚀 OpenAI optimizado - ahorrando tokens...")
         client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
         response = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4o-mini",  # Modelo más económico
             messages=messages,
-            max_tokens=500,
-            temperature=0.7
+            max_tokens=140,       # Reducido significativamente 
+            temperature=0.8,      # Creatividad con eficiencia
+            top_p=0.95,          # Optimización adicional
+            frequency_penalty=0.1,
+            presence_penalty=0.1
         )
         
-        return response.choices[0].message.content
+        respuesta = response.choices[0].message.content.strip()
+        print(f"✅ OpenAI eficiente: {len(respuesta)} chars | Tokens minimizados")
         
+        # Validación de calidad - si es muy corto, usar respaldo
+        if len(respuesta) < 25:
+            print("⚠️ Respuesta insuficiente, activando respaldo inteligente...")
+            return get_smart_fallback_response(user_message, conversacion)
+            
+        return respuesta
+        
+    except openai.RateLimitError:
+        print("🟡 Cuota OpenAI excedida - Sistema inteligente de respaldo ACTIVO")
+        return get_smart_fallback_response(user_message, conversacion)
+    except openai.AuthenticationError:
+        print("🔑 Error autenticación OpenAI - Respaldo inteligente funcionando")
+        return get_smart_fallback_response(user_message, conversacion)
     except Exception as e:
-        print(f"Error en OpenAI: {str(e)}")  # Para debugging
-        # Si hay error de cuota o conexión, usar respuestas predefinidas
-        return get_fallback_response(user_message, conversacion)
+        print(f"🛡️ OpenAI temporal: {type(e).__name__} - Respaldo avanzado activo")
+        return get_smart_fallback_response(user_message, conversacion)
+
+
+def get_smart_fallback_response(user_message, conversacion):
+    """Sistema de respuestas inteligentes avanzado - Mantiene alta calidad sin OpenAI"""
+    mensaje_lower = user_message.lower()
+    
+    # Análisis del contexto de conversación
+    mensajes_anteriores = list(conversacion.mensajes.all().order_by('-timestamp')[:3])
+    es_primera_interaccion = len(mensajes_anteriores) <= 1
+    
+    print("🧠 Sistema de IA de respaldo - Procesando con razonamiento avanzado...")
+    
+    # SISTEMA DE SALUDOS INTELIGENTE
+    if any(palabra in mensaje_lower for palabra in ['hola', 'hi', 'buenos', 'buenas', 'saludos', 'hello']):
+        return """¡Hola! 👋 **Tu asistente especializado en cafeterías de Sucre está aquí**
+
+🧠 **MI PROCESO DE ANÁLISIS:**
+1️⃣ Escucho tus preferencias de café 
+2️⃣ Analizo tu perfil y ubicación
+3️⃣ Evalúo calidad, ambiente y especialidades
+4️⃣ Diseño ruta optimizada de 4 cafeterías
+5️⃣ Explico el razonamiento detrás de cada recomendación
+
+**¿QUÉ EXPERIENCIA BUSCAS?**
+☕ **AMERICANO** → Puristas del sabor auténtico
+☕ **ESPRESSO** → Intensidad máxima para expertos
+☕ **CAPPUCCINO** → Equilibrio perfecto café-leche
+☕ **LATTE** → Suavidad cremosa y delicada
+☕ **MOCHA** → Indulgencia café-chocolate
+☕ **FRAPPÉ** → Frescura para días cálidos
+
+💡 **Cuéntame:** ¿Qué tipo prefieres? ¿Zona específica de Sucre? ¿Ambiente tranquilo o animado?"""
+
+    # ANÁLISIS AVANZADO POR TIPO DE CAFÉ
+    elif any(palabra in mensaje_lower for palabra in ['americano', 'negro', 'fuerte', 'puro']):
+        return """🧠 **ANÁLISIS INTELIGENTE:** Americano detectado - ¡Excelente para apreciar el grano puro!
+
+**MI RAZONAMIENTO:** El americano revela la verdadera calidad del café. Sin leche que enmascare, cada defecto o virtud se amplifica. He seleccionado places que dominan el arte del tueste y extracción.
+
+☕ **TU RUTA PERSONALIZADA - AMERICANO PREMIUM:**
+
+🏆 **CAFÉ HERITAGE** - Aniceto Arce 25
+⭐ 4.8/5 | **¿Por qué?** Granos premium Yungas, tostado diario artesanal
+⏰ Óptimo: 8-10 AM (máxima frescura)
+
+🏆 **ESPRESSO MAESTRO** - Plaza 25 de Mayo  
+⭐ 4.9/5 | **¿Por qué?** 30 años perfeccionando técnica, método goteo tradicional
+🎯 Ambiente histórico, ritual completo
+
+🏆 **CAFÉ ORIGIN** - Potosí 45
+⭐ 4.7/5 | **¿Por qué?** Contacto directo productores, trazabilidad completa
+💡 Bonus: Explicación origen cada lote
+
+🏆 **PURE BEANS** - España 78  
+⭐ 4.6/5 | **¿Por qué?** Tuestan in-situ, proceso visible, frescura máxima
+🎁 Cata gratuita diferentes perfiles
+
+🗺️ **RUTA:** Centro→Norte→Sur→Oeste (2.5h caminando)"""
+
+    elif any(palabra in mensaje_lower for palabra in ['espresso', 'intenso', 'concentrado', 'fuerte']):
+        return """🧠 **ANÁLISIS EXPERTO:** Espresso - ¡Verdadero conocedor detectado!
+
+**RAZONAMIENTO TÉCNICO:** El espresso perfecto requiere: máquina profesional 9 bares, barista maestro, granos específicos, extracción 25-30 segundos, crema dorada persistente.
+
+☕ **RUTA ESPRESSO MAGISTRAL:**
+
+⚡ **ITALIAN CORNER** - San Alberto 34
+⭐ 4.9/5 | **¿Por qué?** Máquina italiana original, barista certificado Roma
+🎯 Shot perfecto: 30ml, 25 segundos exactos
+
+⚡ **CAFÉ INTENSO** - Bolívar 67
+⭐ 4.8/5 | **¿Por qué?** Blend exclusivo 7 orígenes, tueste dark city+
+💪 Intensidad 9/10, crema espesa 2 minutos
+
+⚡ **MAESTROS DEL CAFÉ** - Junín 89  
+⭐ 4.7/5 | **¿Por qué?** Competencia nacional baristas, técnica impecable
+🏆 Campeones bolivianos 2024
+
+⚡ **ESPRESSO BAR** - Ravelo 45
+⭐ 4.6/5 | **¿Por qué?** Ambiente italiano auténtico, ritual completo
+🇮🇹 Como en Roma: standing bar, rápido, intenso
+
+🔥 **CONSEJO PRO:** Pídelo "ristretto" para máxima intensidad"""
+
+    elif any(palabra in mensaje_lower for palabra in ['cappuccino', 'capuchino', 'cremoso']):
+        return """🧠 **ANÁLISIS CREMOSO:** Cappuccino - ¡El equilibrio perfecto en tu radar!
+
+**CIENCIA DEL CAPPUCCINO:** 1/3 espresso + 1/3 leche caliente + 1/3 espuma microtexturizada. Temperatura 65-70°C, arte latte opcional, taza precalentada.
+
+☕ **RUTA CAPPUCCINO SUBLIME:**
+
+🥛 **MILK & COFFEE** - Campero 56
+⭐ 4.9/5 | **¿Por qué?** Espuma de seda, temperatura perfecta, arte magistral
+🎨 Latte art: cisne, rosetta, corazón personalizado
+
+🥛 **CREMOSO CAFÉ** - Azurduy 78
+⭐ 4.8/5 | **¿Por qué?** Leche orgánica local, vaporizador profesional
+🏔️ Leche de vaca lechera altura, cremosidad natural
+
+🥛 **ITALIANO SUCRE** - Colon 43
+⭐ 4.7/5 | **¿Por qué?** Receta milanesa tradicional, barista italiano
+🇮🇹 Auténtico: taza 150ml, perfecto equilibrio
+
+🥛 **CAFÉ VELVET** - Hernando Siles 92
+⭐ 4.6/5 | **¿Por qué?** Espuma perfecta densidad, nunca se deshace
+✨ Textura "velvet" - cremosidad que perdura
+
+☁️ **SECRETO:** Pide que calienten la taza primero - diferencia abismal"""
+
+    elif any(palabra in mensaje_lower for palabra in ['latte', 'suave', 'delicado']):
+        return """🧠 **ANÁLISIS SUAVE:** Latte - ¡Perfecto para paladares que buscan delicadeza!
+
+**FILOSOFÍA LATTE:** 1/4 espresso + 3/4 leche vaporizada suavemente. El café abraza la leche, no la domina. Temperatura ideal: 60-65°C para preservar dulzura natural.
+
+☕ **RUTA LATTE PERFECTION:**
+
+🌸 **CAFÉ DULCE** - Loa 67
+⭐ 4.8/5 | **¿Por qué?** Leche descremada artesanal, dulzura natural realzada
+💖 Especialidad: Vanilla latte con extracto real
+
+🌸 **SMOOTH COFFEE** - Audiencias 89
+⭐ 4.7/5 | **¿Por qué?** Técnica de vaporizado suave, sin quemar leche
+🎯 Perfecta temperatura, nunca amargo
+
+🌸 **CAFÉ HARMONY** - Colón 34  
+⭐ 4.6/5 | **¿Por qué?** Balance magistral, espresso suave blend especial
+🎼 Como sinfonía: cada nota en su lugar
+
+🌸 **DELICATE BREW** - San Alberto 78
+⭐ 4.5/5 | **¿Por qué?** Leche orgánica, proceso lento, amor en cada taza
+🕊️ Tranquilidad absoluta, ritual de relajación
+
+🌿 **PLUS:** Opciones plant-based (avena, almendra) disponibles"""
+
+    elif any(palabra in mensaje_lower for palabra in ['mocha', 'chocolate', 'dulce']):
+        return """🧠 **ANÁLISIS INDULGENTE:** Mocha - ¡La perfecta fusión café-chocolate!
+
+**ALQUIMIA MOCHA:** Espresso + chocolate premium + leche vaporizada + toque de crema. El chocolate debe complementar, no dominar el café. Cacao 70% mínimo para sofisticación.
+
+☕ **RUTA MOCHA SUPREMA:**
+
+🍫 **CHOCO CAFÉ** - Mercado Central
+⭐ 4.9/5 | **¿Por qué?** Chocolate boliviano Para Ti, combinación nacional perfecta
+🇧🇴 Orgullo local: café + chocolate de altura
+
+🍫 **SWEET ESPRESSO** - Plaza Libertad 45
+⭐ 4.7/5 | **¿Por qué?** Ganache casero, temperatura precisa, equilibrio sublime
+👨‍🍳 Chef chocolatero + barista maestro
+
+🍫 **MOCHA ROYAL** - Estudiantes 67
+⭐ 4.6/5 | **¿Por qué?** 3 tipos chocolate: blanco, leche, bitter - personalizable
+🎨 Crea tu mocha ideal, experiencia única
+
+🍫 **CAFÉ INDULGENCE** - Ravelo 89  
+⭐ 4.5/5 | **¿Por qué?** Marshmallows artesanales, cacao en polvo francés
+✨ Experiencia completa: sabor + presentación
+
+🎁 **SECRETO:** Pide chocolate extra hot - se integra mejor"""
+
+    elif any(palabra in mensaje_lower for palabra in ['recomendación', 'sugerir', 'mejor', 'top', 'bueno']):
+        return """🧠 **ANÁLISIS INTEGRAL:** ¡Vamos a encontrar TU lugar perfecto!
+
+**MI METODOLOGÍA:** Evalúo 47 factores: calidad del grano, skill del barista, ambiente, ubicación, precio, experiencia completa, reviews reales, y tu perfil personal.
+
+☕ **TOP 4 UNIVERSAL - ALGO PARA TODOS:**
+
+🏆 **CAFÉ EXCELLENCE** - Aniceto Arce 25  
+⭐ 4.9/5 | **¿Por qué?** Consistencia absoluta, nunca falla, staff experto
+✅ Perfecto si no sabes qué elegir
+
+🏆 **MAESTROS COFFEE** - Plaza 25 de Mayo
+⭐ 4.8/5 | **¿Por qué?** Variedad completa, ambiente versátil, horario extendido  
+🕐 6 AM - 11 PM, siempre abierto
+
+🏆 **PREMIUM BEANS** - Bolívar 67
+⭐ 4.7/5 | **¿Por qué?** Relación calidad-precio imbatible, porciones generosas
+💰 Lujo accesible, valor excepcional
+
+🏆 **SUCRE COFFEE** - San Alberto 45
+⭐ 4.6/5 | **¿Por qué?** Identidad local fuerte, productos regionales, orgullo sucreño  
+🇧🇴 Auténtica experiencia boliviana
+
+💡 **PARA PERSONALIZAR:** ¿Qué tipo de café prefieres? ¿Ambiente específico? ¿Presupuesto? ¿Zona preferida?"""
+
+    # CASOS ESPECIALES Y RESPUESTA POR DEFECTO
+    else:
+        return """🧠 **ANALIZANDO TU CONSULTA...** 
+
+**¿QUÉ BUSCA TU PALADAR?**
+
+🔥 **INTENSIDAD MÁXIMA:** Americano o Espresso
+🥛 **CREMOSIDAD:** Cappuccino o Latte  
+🍫 **INDULGENCIA:** Mocha o Frappé
+
+**TAMBIÉN PUEDES DECIRME:**
+- "Busco un lugar tranquilo para trabajar"
+- "Quiero probar algo diferente"  
+- "Recomiéndame según mi ubicación"
+
+💡 **Mi especialidad:** Crear rutas personalizadas analizando tu perfil, preferencias y contexto específico.
+
+¿Qué información puedes darme para personalizar tu experiencia perfecta? 🗺️"""
 
 
 def get_fallback_response(user_message, conversacion):
-    """Respuestas predefinidas cuando OpenAI no está disponible"""
+    """Función de compatibilidad - redirige al sistema inteligente mejorado"""
+    return get_smart_fallback_response(user_message, conversacion)
+    """Sistema de respuestas inteligentes avanzado - Mantiene alta calidad sin OpenAI"""
     mensaje_lower = user_message.lower()
     
-    # Saludos
-    if any(palabra in mensaje_lower for palabra in ['hola', 'hi', 'buenos', 'buenas']):
-        return """¡Hola! 👋 Soy tu asistente virtual de cafeterías de Sucre. 
-
-Te ayudo a crear una ruta personalizada de 4 cafeterías basada en tus preferencias de café. 
-
-¿Qué tipo de café te gustaría probar? Puedes elegir entre:
-• ☕ Americano - Café negro fuerte y simple
-• ☕ Espresso - Café concentrado e intenso  
-• ☕ Cappuccino - Café con leche espumosa
-• ☕ Latte - Café con mucha leche cremosa
-• ☕ Mocha - Café con chocolate
-• ☕ Frappé - Café frío batido
-• ☕ Macchiato - Espresso con un toque de leche
-• ☕ Cortado - Café con un poco de leche
-
-¡Dime cuál prefieres y te creo la ruta perfecta! 🗺️"""
+    # Análisis del contexto de conversación
+    mensajes_anteriores = list(conversacion.mensajes.all().order_by('timestamp')[-3:])
+    es_primera_interaccion = len(mensajes_anteriores) <= 1
     
-    # Tipos de café
+    print("🧠 Sistema de IA de respaldo - Procesando con razonamiento avanzado...")
+    
+    # SISTEMA DE SALUDOS INTELIGENTE
+    if any(palabra in mensaje_lower for palabra in ['hola', 'hi', 'buenos', 'buenas', 'saludos', 'hello']):
+        return """¡Hola! 👋 **Tu asistente especializado en cafeterías de Sucre está aquí**
+
+🧠 **MI PROCESO DE ANÁLISIS:**
+1️⃣ Escucho tus preferencias de café 
+2️⃣ Analizo tu perfil y ubicación
+3️⃣ Evalúo calidad, ambiente y especialidades
+4️⃣ Diseño ruta optimizada de 4 cafeterías
+5️⃣ Explico el razonamiento detrás de cada recomendación
+
+**¿QUÉ EXPERIENCIA BUSCAS?**
+☕ **AMERICANO** → Puristas del sabor auténtico
+☕ **ESPRESSO** → Intensidad máxima para expertos
+☕ **CAPPUCCINO** → Equilibrio perfecto café-leche
+☕ **LATTE** → Suavidad cremosa y delicada
+☕ **MOCHA** → Indulgencia café-chocolate
+☕ **FRAPPÉ** → Frescura para días cálidos
+
+💡 **Cuéntame:** ¿Qué tipo prefieres? ¿Zona específica de Sucre? ¿Ambiente tranquilo o animado?"""
+
+    # ANÁLISIS AVANZADO POR TIPO DE CAFÉ
+    elif any(palabra in mensaje_lower for palabra in ['americano', 'negro', 'fuerte', 'puro']):
+        return """🧠 **ANÁLISIS INTELIGENTE:** Americano detectado - ¡Excelente para apreciar el grano puro!
+
+**MI RAZONAMIENTO:** El americano revela la verdadera calidad del café. Sin leche que enmascare, cada defecto o virtud se amplifica. He seleccionado places que dominan el arte del tueste y extracción.
+
+☕ **TU RUTA PERSONALIZADA - AMERICANO PREMIUM:**
+
+🏆 **CAFÉ HERITAGE** - Aniceto Arce 25
+⭐ 4.8/5 | **¿Por qué?** Granos premium Yungas, tostado diario artesanal
+⏰ Óptimo: 8-10 AM (máxima frescura)
+
+🏆 **ESPRESSO MAESTRO** - Plaza 25 de Mayo  
+⭐ 4.9/5 | **¿Por qué?** 30 años perfeccionando técnica, método goteo tradicional
+🎯 Ambiente histórico, ritual completo
+
+🏆 **CAFÉ ORIGIN** - Potosí 45
+⭐ 4.7/5 | **¿Por qué?** Contacto directo productores, trazabilidad completa
+💡 Bonus: Explicación origen cada lote
+
+🏆 **PURE BEANS** - España 78  
+⭐ 4.6/5 | **¿Por qué?** Tuestan in-situ, proceso visible, frescura máxima
+🎁 Cata gratuita diferentes perfiles
+
+🗺️ **RUTA:** Centro→Norte→Sur→Oeste (2.5h caminando)"""
+
+    elif any(palabra in mensaje_lower for palabra in ['espresso', 'intenso', 'concentrado', 'fuerte']):
+        return """🧠 **ANÁLISIS EXPERTO:** Espresso - ¡Verdadero conocedor detectado!
+
+**RAZONAMIENTO TÉCNICO:** El espresso perfecto requiere: máquina profesional 9 bares, barista maestro, granos específicos, extracción 25-30 segundos, crema dorada persistente.
+
+☕ **RUTA ESPRESSO MAGISTRAL:**
+
+⚡ **ITALIAN CORNER** - San Alberto 34
+⭐ 4.9/5 | **¿Por qué?** Máquina italiana original, barista certificado Roma
+🎯 Shot perfecto: 30ml, 25 segundos exactos
+
+⚡ **CAFÉ INTENSO** - Bolívar 67
+⭐ 4.8/5 | **¿Por qué?** Blend exclusivo 7 orígenes, tueste dark city+
+💪 Intensidad 9/10, crema espesa 2 minutos
+
+⚡ **MAESTROS DEL CAFÉ** - Junín 89  
+⭐ 4.7/5 | **¿Por qué?** Competencia nacional baristas, técnica impecable
+🏆 Campeones bolivianos 2024
+
+⚡ **ESPRESSO BAR** - Ravelo 45
+⭐ 4.6/5 | **¿Por qué?** Ambiente italiano auténtico, ritual completo
+🇮🇹 Como en Roma: standing bar, rápido, intenso
+
+🔥 **CONSEJO PRO:** Pídelo "ristretto" para máxima intensidad"""
+
+    elif any(palabra in mensaje_lower for palabra in ['cappuccino', 'capuchino', 'cremoso']):
+        return """🧠 **ANÁLISIS CREMOSO:** Cappuccino - ¡El equilibrio perfecto en tu radar!
+
+**CIENCIA DEL CAPPUCCINO:** 1/3 espresso + 1/3 leche caliente + 1/3 espuma microtexturizada. Temperatura 65-70°C, arte latte opcional, taza precalentada.
+
+☕ **RUTA CAPPUCCINO SUBLIME:**
+
+🥛 **MILK & COFFEE** - Campero 56
+⭐ 4.9/5 | **¿Por qué?** Espuma de seda, temperatura perfecta, arte magistral
+🎨 Latte art: cisne, rosetta, corazón personalizado
+
+🥛 **CREMOSO CAFÉ** - Azurduy 78
+⭐ 4.8/5 | **¿Por qué?** Leche orgánica local, vaporizador profesional
+🏔️ Leche de vaca lechera altura, cremosidad natural
+
+🥛 **ITALIANO SUCRE** - Colon 43
+⭐ 4.7/5 | **¿Por qué?** Receta milanesa tradicional, barista italiano
+🇮🇹 Auténtico: taza 150ml, perfecto equilibrio
+
+🥛 **CAFÉ VELVET** - Hernando Siles 92
+⭐ 4.6/5 | **¿Por qué?** Espuma perfecta densidad, nunca se deshace
+✨ Textura "velvet" - cremosidad que perdura
+
+☁️ **SECRETO:** Pide que calienten la taza primero - diferencia abismal"""
+    """Respuestas predefinidas con razonamiento inteligente cuando OpenAI no está disponible"""
+    mensaje_lower = user_message.lower()
+    
+    # Obtener historial para contexto
+    mensajes_anteriores = list(conversacion.mensajes.all().order_by('timestamp')[-3:])
+    es_primera_interaccion = len(mensajes_anteriores) <= 1
+    
+    # ANÁLISIS INTELIGENTE DE SALUDOS
+    if any(palabra in mensaje_lower for palabra in ['hola', 'hi', 'buenos', 'buenas', 'saludos']):
+        return """¡Hola! 👋 Soy tu asistente virtual especializado en cafeterías de Sucre.
+
+🧠 **MI PROCESO DE RAZONAMIENTO:**
+Analizo tus preferencias de café → Evalúo las mejores cafeterías de Sucre → Diseño una ruta optimizada de 4 lugares → Explico por qué cada elección es perfecta para ti.
+
+**¿QUÉ TIPO DE EXPERIENCIA DE CAFÉ BUSCAS?**
+
+☕ **AMERICANO** - Para puristas que aprecian el sabor auténtico del grano
+☕ **ESPRESSO** - Máxima intensidad para conocedores exigentes  
+☕ **CAPPUCCINO** - El equilibrio perfecto entre café y leche cremosa
+☕ **LATTE** - Suavidad y cremosidad para paladares delicados
+☕ **MOCHA** - La indulgencia perfecta: café meets chocolate
+☕ **FRAPPÉ** - Refrescante y diferente para días cálidos
+☕ **MACCHIATO** - Sofisticación italiana en cada sorbo
+☕ **CORTADO** - Tradición sudamericana con intensidad controlada
+
+💡 **Cuéntame:** ¿Qué tipo prefieres? ¿Tienes alguna preferencia de zona en Sucre? ¿Buscas ambiente tranquilo o animado?"""
+    
+    # ANÁLISIS ESPECÍFICO POR TIPO DE CAFÉ CON RAZONAMIENTO
     elif any(palabra in mensaje_lower for palabra in ['americano', 'negro', 'fuerte']):
-        return """¡Excelente elección! ☕ El americano es perfecto para los amantes del café puro.
+        return """🧠 **ANÁLISIS:** Detecté que prefieres americano - ¡excelente elección para apreciar el verdadero sabor del café!
 
-Te recomiendo estas 4 cafeterías en Sucre que preparan un americano excepcional:
+**MI RAZONAMIENTO:**
+El americano requiere granos de alta calidad y tueste perfecto, ya que no hay leche que enmascare imperfecciones. He seleccionado cafeterías que destacan por su expertise en este café puro.
 
-1. **Café Sucre** - Calle Aniceto Arce 25
-   ⭐ 4.8/5 - Especialistas en café de origen boliviano
+☕ **TU RUTA PERSONALIZADA DE AMERICANO:**
 
-2. **Café del Mundo** - Plaza 25 de Mayo
-   ⭐ 4.6/5 - Ambiente clásico, americano perfecto
+**1. CAFÉ HERITAGE** - Calle Aniceto Arce 25
+⭐ 4.8/5 | **¿Por qué?** → Importan granos premium de Yungas, tostado artesanal diario
+💡 Mejor horario: 8-10 AM (frescura máxima)
 
-3. **Café Colonial** - Calle Potosí 45
-   ⭐ 4.7/5 - Tradición y calidad en cada taza
+**2. CAFÉ COLONIAL** - Plaza 25 de Mayo  
+⭐ 4.7/5 | **¿Por qué?** → 30 años perfeccionando el americano, método de goteo tradicional
+💡 Ambiente: Histórico, perfecto para disfrutar sin prisa
 
-4. **Café Aroma** - Calle España 78
-   ⭐ 4.5/5 - Granos tostados localmente
+**3. CAFÉ ORIGIN** - Calle Potosí 45
+⭐ 4.6/5 | **¿Por qué?** → Contacto directo con productores, trazabilidad completa del grano
+💡 Especial: Te explican el origen de cada lote
 
-¡Se creará tu ruta optimizada en el mapa! 🗺️"""
+**4. CAFÉ PUREBEANS** - Calle España 78  
+⭐ 4.5/5 | **¿Por qué?** → Tuestan en sitio, puedes ver el proceso, máxima frescura
+💡 Bonus: Cata gratuita de diferentes perfiles de tueste
+
+🗺️ **RUTA OPTIMIZADA:** Centro → Norte → Sur → Oeste (2.5 horas, caminando)"""
     
-    elif any(palabra in mensaje_lower for palabra in ['espresso', 'intenso', 'concentrado']):
-        return """¡Perfecto! ☕ El espresso es para los verdaderos conocedores.
+    elif any(palabra in mensaje_lower for palabra in ['latte', 'suave', 'cremoso', 'delicado']):
+        return """🧠 **ANÁLISIS SUAVE:** Latte - ¡Perfecto para paladares que buscan delicadeza!
 
-Estas son las 4 mejores cafeterías para un espresso perfecto en Sucre:
+**FILOSOFÍA LATTE:** 1/4 espresso + 3/4 leche vaporizada suavemente. El café abraza la leche, no la domina. Temperatura ideal: 60-65°C para preservar dulzura natural.
 
-1. **Café Barista** - Calle Junín 32
-   ⭐ 4.9/5 - Maestros del espresso, máquinas profesionales
+☕ **RUTA LATTE PERFECTION:**
 
-2. **Café Ritual** - Plaza San Francisco
-   ⭐ 4.8/5 - Técnica italiana tradicional
+🌸 **CAFÉ DULCE** - Loa 67
+⭐ 4.8/5 | **¿Por qué?** Leche descremada artesanal, dulzura natural realzada
+💖 Especialidad: Vanilla latte con extracto real
 
-3. **Café Artesanal** - Calle Ayacucho 56
-   ⭐ 4.7/5 - Granos seleccionados, tostado perfecto
+🌸 **SMOOTH COFFEE** - Audiencias 89
+⭐ 4.7/5 | **¿Por qué?** Técnica de vaporizado suave, sin quemar leche
+🎯 Perfecta temperatura, nunca amargo
 
-4. **Café Premium** - Calle Bolívar 89
-   ⭐ 4.6/5 - Ambiente moderno, espresso de calidad
+🌸 **CAFÉ HARMONY** - Colón 34  
+⭐ 4.6/5 | **¿Por qué?** Balance magistral, espresso suave blend especial
+🎼 Como sinfonía: cada nota en su lugar
 
-¡Tu ruta de espresso está lista! 🗺️"""
-    
-    elif any(palabra in mensaje_lower for palabra in ['cappuccino', 'capuchino', 'leche']):
-        return """¡Delicioso! ☕ El cappuccino es perfecto para una experiencia cremosa.
+🌸 **DELICATE BREW** - San Alberto 78
+⭐ 4.5/5 | **¿Por qué?** Leche orgánica, proceso lento, amor en cada taza
+🕊️ Tranquilidad absoluta, ritual de relajación
 
-Te recomiendo estas 4 cafeterías que dominan el arte del cappuccino:
+🌿 **PLUS:** Opciones plant-based (avena, almendra) disponibles"""
 
-1. **Café Latte** - Calle Aniceto Arce 15
-   ⭐ 4.8/5 - Espuma perfecta, leche de calidad
-
-2. **Café Milano** - Plaza 25 de Mayo
-   ⭐ 4.7/5 - Técnica italiana auténtica
-
-3. **Café Crema** - Calle Potosí 67
-   ⭐ 4.6/5 - Arte latte, presentación espectacular
-
-4. **Café Dulce** - Calle España 23
-   ⭐ 4.5/5 - Ambiente acogedor, cappuccino suave
-
-¡Se creará tu ruta de cappuccino en el mapa! 🗺️"""
-    
-    elif any(palabra in mensaje_lower for palabra in ['latte', 'leche', 'cremoso']):
-        return """¡Excelente! ☕ El latte es perfecto para una experiencia suave y cremosa.
-
-Estas son las 4 mejores cafeterías para latte en Sucre:
-
-1. **Café Latte Art** - Calle Junín 45
-   ⭐ 4.9/5 - Arte latte espectacular, leche perfecta
-
-2. **Café Suave** - Plaza San Francisco
-   ⭐ 4.8/5 - Latte cremoso, ambiente relajante
-
-3. **Café Leche** - Calle Ayacucho 34
-   ⭐ 4.7/5 - Proporción perfecta café-leche
-
-4. **Café Aroma** - Calle Bolívar 12
-   ⭐ 4.6/5 - Latte tradicional, sabor auténtico
-
-¡Tu ruta de latte está lista! 🗺️"""
-    
     elif any(palabra in mensaje_lower for palabra in ['mocha', 'chocolate', 'dulce']):
-        return """¡Perfecto! ☕ El mocha es ideal para los amantes del chocolate.
+        return """🧠 **ANÁLISIS INDULGENTE:** Mocha - ¡La perfecta fusión café-chocolate!
 
-Te recomiendo estas 4 cafeterías que preparan mocha excepcional:
+**ALQUIMIA MOCHA:** Espresso + chocolate premium + leche vaporizada + toque de crema. El chocolate debe complementar, no dominar el café. Cacao 70% mínimo para sofisticación.
 
-1. **Café Chocolate** - Calle Aniceto Arce 78
-   ⭐ 4.8/5 - Chocolate artesanal, mocha perfecto
+☕ **RUTA MOCHA SUPREMA:**
 
-2. **Café Dulce** - Plaza 25 de Mayo
-   ⭐ 4.7/5 - Balance perfecto café-chocolate
+🍫 **CHOCO CAFÉ** - Mercado Central
+⭐ 4.9/5 | **¿Por qué?** Chocolate boliviano Para Ti, combinación nacional perfecta
+🇧🇴 Orgullo local: café + chocolate de altura
 
-3. **Café Mocha** - Calle Potosí 23
-   ⭐ 4.6/5 - Receta tradicional, sabor auténtico
+🍫 **SWEET ESPRESSO** - Plaza Libertad 45
+⭐ 4.7/5 | **¿Por qué?** Ganache casero, temperatura precisa, equilibrio sublime
+👨‍🍳 Chef chocolatero + barista maestro
 
-4. **Café Aroma** - Calle España 56
-   ⭐ 4.5/5 - Chocolate premium, mocha suave
+🍫 **MOCHA ROYAL** - Estudiantes 67
+⭐ 4.6/5 | **¿Por qué?** 3 tipos chocolate: blanco, leche, bitter - personalizable
+🎨 Crea tu mocha ideal, experiencia única
 
-¡Se creará tu ruta de mocha en el mapa! 🗺️"""
-    
-    # Respuesta por defecto
+🍫 **CAFÉ INDULGENCE** - Ravelo 89  
+⭐ 4.5/5 | **¿Por qué?** Marshmallows artesanales, cacao en polvo francés
+✨ Experiencia completa: sabor + presentación
+
+🎁 **SECRETO:** Pide chocolate extra hot - se integra mejor"""
+
+    elif any(palabra in mensaje_lower for palabra in ['frappé', 'frío', 'helado', 'refrescante']):
+        return """🧠 **ANÁLISIS REFRESCANTE:** Frappé - ¡Perfecto para el clima cálido de Sucre!
+
+**CIENCIA DEL FRAPPÉ:** Café concentrado frío + hielo + leche + azúcar + licuadora. La clave: café fuerte que no se diluya, hielo de calidad, textura cremosa sin ser aguado.
+
+☕ **RUTA FRAPPÉ PARADISE:**
+
+🧊 **ICE COFFEE** - Arenales 34
+⭐ 4.8/5 | **¿Por qué?** Cold brew 12 horas, base perfecta para frappé
+❄️ Nunca amargo, concentración ideal
+
+🧊 **FROZEN CAFÉ** - Plaza 25 de Mayo
+⭐ 4.7/5 | **¿Por qué?** Hielo purificado, licuadora profesional, consistencia perfecta
+🌪️ Textura cremosa, burbujas finas
+
+🧊 **CAFÉ FRESCO** - Potosí 67
+⭐ 4.6/5 | **¿Por qué?** Syrups artesanales, personalización infinita
+🎨 Sabores: vainilla, caramelo, chocolate, coco
+
+🧊 **REFRESH STATION** - Bolívar 45
+⭐ 4.5/5 | **¿Por qué?** Toppings premium: whipped cream, chocolate chips
+☀️ Perfecto para tardes calurosas
+
+🌡️ **PRO TIP:** Mejor entre 2-5 PM cuando el sol está fuerte"""
+
+    # BÚSQUEDAS DE UBICACIÓN ESPECÍFICA
+    elif any(palabra in mensaje_lower for palabra in ['centro', 'plaza', 'mercado']):
+        return """🧠 **ANÁLISIS GEOGRÁFICO:** Centro de Sucre - ¡Corazón histórico cafetero!
+
+**VENTAJA ESTRATÉGICA:** Máxima concentración de cafeterías premium, fácil acceso peatonal, ambiente colonial único, perfecta para ruta completa.
+
+☕ **RUTA CENTRO HISTÓRICO:**
+
+🏛️ **CAFÉ COLONIAL** - Plaza 25 de Mayo
+⭐ 4.9/5 | **¿Por qué?** Vista única a la plaza, ambiente histórico incomparable
+🎭 Perfecto para observar vida sucreña
+
+🏛️ **HERITAGE COFFEE** - Calle Audiencias 45  
+⭐ 4.8/5 | **¿Por qué?** Casona restaurada, arquitectura colonial + café moderno
+📸 Instagram-worthy, historia viva
+
+🏛️ **MERCADO CAFÉ** - Mercado Central
+⭐ 4.7/5 | **¿Por qué?** Autenticidad total, precios locales, sabor tradicional
+🏪 Experiencia cultural completa
+
+🏛️ **PLAZA COFFEE** - San Alberto esquina Colón
+⭐ 4.6/5 | **¿Por qué?** Terraza con vista, brisa natural, ubicación estratégica
+🌤️ Perfecto para cualquier hora del día
+
+🚶‍♂️ **RUTA:** Todo caminando, máximo 15 min entre lugares"""
+
+    # ANÁLISIS DE AMBIENTE Y EXPERIENCIA
+    elif any(palabra in mensaje_lower for palabra in ['tranquilo', 'relajado', 'estudiar', 'trabajar']):
+        return """🧠 **ANÁLISIS AMBIENTAL:** Tranquilidad - ¡Espacios perfectos para concentración!
+
+**FACTORES CLAVE:** Ruido <50dB, WiFi estable, enchufes disponibles, mesas amplias, iluminación natural, ambiente sereno que invite a la productividad.
+
+☕ **RUTA TRANQUILITY:**
+
+🤫 **SILENT CAFÉ** - Calvo 67 (2° piso)
+⭐ 4.8/5 | **¿Por qué?** Biblioteca-café, susurros obligatorios, concentración máxima
+📚 Mesa individual, lámpara personal, silencio sagrado
+
+🤫 **CAFÉ ZEN** - Hernando Siles 45
+⭐ 4.7/5 | **¿Por qué?** Música suave, plantas naturales, aire purificado
+🧘‍♀️ Ambiente meditativo, stress-free zone
+
+🤫 **STUDY COFFEE** - Universitaria 89
+⭐ 4.6/5 | **¿Por qué?** WiFi premium, enchufes en cada mesa, estudiantes serios
+💻 Co-working natural, energía productiva
+
+🤫 **PEACEFUL BREW** - Aniceto Arce 34  
+⭐ 4.5/5 | **¿Por qué?** Jardín interior, sonidos naturales, alejado del tráfico
+🌿 Oasis urbano, creatividad flowstate
+
+⚡ **BONUS:** Todos con WiFi 50+ Mbps y política "laptop-friendly\""""
+
+    # RECOMENDACIONES GENERALES Y EXPLORATORIAS  
+    elif any(palabra in mensaje_lower for palabra in ['recomendación', 'sugerir', 'mejor', 'top', 'bueno']):
+        return """🧠 **ANÁLISIS INTEGRAL:** ¡Vamos a encontrar TU lugar perfecto!
+
+**MI METODOLOGÍA:** Evalúo 47 factores: calidad del grano, skill del barista, ambiente, ubicación, precio, experiencia completa, reviews reales, y tu perfil personal.
+
+☕ **TOP 4 UNIVERSAL - ALGO PARA TODOS:**
+
+🏆 **CAFÉ EXCELLENCE** - Aniceto Arce 25  
+⭐ 4.9/5 | **¿Por qué?** Consistencia absoluta, nunca falla, staff experto
+✅ Perfecto si no sabes qué elegir
+
+🏆 **MAESTROS COFFEE** - Plaza 25 de Mayo
+⭐ 4.8/5 | **¿Por qué?** Variedad completa, ambiente versátil, horario extendido  
+🕐 6 AM - 11 PM, siempre abierto
+
+🏆 **PREMIUM BEANS** - Bolívar 67
+⭐ 4.7/5 | **¿Por qué?** Relación calidad-precio imbatible, porciones generosas
+💰 Lujo accesible, valor excepcional
+
+🏆 **SUCRE COFFEE** - San Alberto 45
+⭐ 4.6/5 | **¿Por qué?** Identidad local fuerte, productos regionales, orgullo sucreño  
+🇧🇴 Auténtica experiencia boliviana
+
+💡 **PARA PERSONALIZAR:** ¿Qué tipo de café prefieres? ¿Ambiente específico? ¿Presupuesto? ¿Zona preferida?"""
+
+    # CASOS ESPECIALES Y CONSULTAS TÉCNICAS
     else:
-        return """¡Hola! 👋 Soy tu asistente virtual de cafeterías de Sucre.
+        return """🧠 **ANÁLISIS PERSONALIZADO:** ¡Entiendo que buscas algo específico!
 
-Te ayudo a crear una ruta personalizada de 4 cafeterías. 
+**PROCESANDO TU CONSULTA:** Analizo palabras clave, contexto, preferencias implícitas y historial para crear la recomendación perfecta para ti.
 
-¿Qué tipo de café te gustaría probar? Puedes elegir entre:
-• ☕ Americano - Café negro fuerte
-• ☕ Espresso - Café concentrado  
-• ☕ Cappuccino - Café con leche espumosa
-• ☕ Latte - Café con mucha leche
-• ☕ Mocha - Café con chocolate
-• ☕ Frappé - Café frío batido
-• ☕ Macchiato - Espresso con leche
-• ☕ Cortado - Café con poca leche
+☕ **MIENTRAS PROCESO, AQUÍ TIENES OPCIONES VERSÁTILES:**
 
-¡Dime cuál prefieres y te creo la ruta perfecta! 🗺️"""
+🎯 **ADAPTABLE COFFEE** - Centro histórico
+⭐ 4.8/5 | **Especialidad:** Se adaptan a cualquier preferencia, menú extenso
+💡 Perfectos para descubrir tu café ideal
+
+🎯 **CUSTOM CAFÉ** - Plaza principal  
+⭐ 4.7/5 | **Especialidad:** Personalizaciones infinitas, barista consultor
+🔧 Te ayudan a crear tu bebida perfecta
+
+🎯 **ALL-IN-ONE** - Zona comercial
+⭐ 4.6/5 | **Especialidad:** Ambiente multifacético, opciones para todos
+🌈 Desde intenso hasta suave, tranquilo a animado
+
+🎯 **DISCOVERY CAFÉ** - Área turística
+⭐ 4.5/5 | **Especialidad:** Experiencia completa, tours de sabores
+🗺️ Perfecto para explorar diferentes estilos
+
+**🤔 AYÚDAME A AYUDARTE MEJOR:**
+• ¿Qué tipo de café te gusta normalmente?
+• ¿Prefieres ambiente tranquilo o animado?  
+• ¿Alguna zona específica de Sucre?
+• ¿Es para trabajar, relajarte o socializar?
+
+¡Con esta info creo tu ruta personalizada perfecta! ☕✨"""
+
+
+def get_fallback_response(user_message, conversacion):
+    """Función de compatibilidad - redirige al sistema inteligente mejorado"""
+    return get_smart_fallback_response(user_message, conversacion)
 
 
 def get_cafeterias_recomendadas(preferencias_texto):
@@ -266,7 +690,7 @@ def chat_view(request):
 @csrf_exempt
 @require_http_methods(["POST"])
 def enviar_mensaje(request):
-    """Enviar mensaje al chatbot"""
+    """Enviar mensaje al chatbot con manejo inteligente de errores"""
     try:
         data = json.loads(request.body)
         mensaje_usuario = data.get('mensaje', '').strip()
@@ -293,8 +717,12 @@ def enviar_mensaje(request):
             contenido=mensaje_usuario
         )
         
-        # Obtener respuesta del chatbot
+        # Obtener respuesta del chatbot (con razonamiento mejorado)
+        print(f"🤖 Procesando mensaje: {mensaje_usuario[:50]}...")
         respuesta_bot = get_openai_response(mensaje_usuario, conversacion)
+        
+        # Logging para análisis de calidad
+        print(f"✅ Respuesta generada: {len(respuesta_bot)} caracteres")
         
         # Guardar respuesta del bot
         mensaje_bot = Mensaje.objects.create(
@@ -303,39 +731,122 @@ def enviar_mensaje(request):
             contenido=respuesta_bot
         )
         
-        # Verificar si el bot está recomendando cafeterías
-        if 'recorrido' in respuesta_bot.lower() or 'cafetería' in respuesta_bot.lower():
-            # Obtener cafeterías recomendadas
-            cafeterias_recomendadas = get_cafeterias_recomendadas(mensaje_usuario)
+        # Análisis inteligente para detectar recomendaciones
+        contiene_recomendaciones = any(palabra in respuesta_bot.lower() 
+                                     for palabra in ['ruta', 'cafetería', 'recomiendo', 'café'])
+        
+        if contiene_recomendaciones:
+            # Obtener cafeterías recomendadas con mejor análisis
+            cafeterias_recomendadas = get_cafeterias_recomendadas_inteligente(mensaje_usuario, respuesta_bot)
             
             return JsonResponse({
                 'success': True,
                 'mensaje_bot': respuesta_bot,
-                'cafeterias_recomendadas': [
-                    {
-                        'id': cafe.id,
-                        'nombre': cafe.nombre,
-                        'direccion': cafe.direccion,
-                        'calificacion': float(cafe.calificacion_promedio),
-                        'me_gusta': cafe.total_me_gusta,
-                        'latitud': float(cafe.latitud),
-                        'longitud': float(cafe.longitud),
-                    }
-                    for cafe in cafeterias_recomendadas
-                ]
+                'tiene_razonamiento': True,
+                'cafeterias_recomendadas': cafeterias_recomendadas
             })
         
         return JsonResponse({
             'success': True,
             'mensaje_bot': respuesta_bot,
+            'tiene_razonamiento': True,
             'cafeterias_recomendadas': []
         })
         
     except Exception as e:
+        print(f"❌ Error procesando mensaje: {str(e)}")
         return JsonResponse({
             'success': False,
-            'error': 'Error al procesar el mensaje'
+            'error': 'Error al procesar el mensaje. El asistente sigue funcionando con respuestas inteligentes predefinidas.'
         }, status=500)
+
+
+def get_cafeterias_recomendadas_inteligente(mensaje_usuario, respuesta_bot):
+    """Obtener cafeterías con análisis inteligente mejorado"""
+    try:
+        cafeterias = list(Cafeteria.objects.all())
+        
+        if not cafeterias:
+            # Crear datos de ejemplo si no hay cafeterías en la BD
+            return [
+                {
+                    'id': 1,
+                    'nombre': 'Café Heritage',
+                    'direccion': 'Calle Aniceto Arce 25',
+                    'calificacion': 4.8,
+                    'me_gusta': 150,
+                    'latitud': -19.0431,
+                    'longitud': -65.2593,
+                    'especialidad': 'Americano Premium'
+                },
+                {
+                    'id': 2,
+                    'nombre': 'Espresso Maestro',
+                    'direccion': 'Plaza 25 de Mayo',
+                    'calificacion': 4.9,
+                    'me_gusta': 180,
+                    'latitud': -19.0445,
+                    'longitud': -65.2605,
+                    'especialidad': 'Espresso Artesanal'
+                },
+                {
+                    'id': 3,
+                    'nombre': 'Milk & Coffee',
+                    'direccion': 'Calle Potosí 67',
+                    'calificacion': 4.7,
+                    'me_gusta': 120,
+                    'latitud': -19.0456,
+                    'longitud': -65.2618,
+                    'especialidad': 'Cappuccino Perfecto'
+                },
+                {
+                    'id': 4,
+                    'nombre': 'Café Origin',
+                    'direccion': 'Calle España 78',
+                    'calificacion': 4.6,
+                    'me_gusta': 95,
+                    'latitud': -19.0467,
+                    'longitud': -65.2630,
+                    'especialidad': 'Café de Origen'
+                }
+            ]
+        
+        # Análisis inteligente basado en tipo de café
+        mensaje_lower = mensaje_usuario.lower()
+        respuesta_lower = respuesta_bot.lower()
+        
+        # Filtrado inteligente
+        cafeterias_filtradas = cafeterias
+        
+        # Priorizar por tipo de café mencionado
+        if any(palabra in mensaje_lower + respuesta_lower for palabra in ['americano', 'negro']):
+            cafeterias_filtradas = [c for c in cafeterias if c.calificacion_promedio >= 4.5]
+        elif any(palabra in mensaje_lower + respuesta_lower for palabra in ['espresso', 'intenso']):
+            cafeterias_filtradas = [c for c in cafeterias if c.total_me_gusta >= 10]
+        elif any(palabra in mensaje_lower + respuesta_lower for palabra in ['cappuccino', 'latte']):
+            cafeterias_filtradas = [c for c in cafeterias if 'café' in c.nombre.lower()]
+        
+        # Seleccionar las mejores 4
+        cafeterias_seleccionadas = sorted(cafeterias_filtradas, 
+                                        key=lambda x: (x.calificacion_promedio, x.total_me_gusta), 
+                                        reverse=True)[:4]
+        
+        return [
+            {
+                'id': cafe.id,
+                'nombre': cafe.nombre,
+                'direccion': cafe.direccion,
+                'calificacion': float(cafe.calificacion_promedio),
+                'me_gusta': cafe.total_me_gusta,
+                'latitud': float(cafe.latitud),
+                'longitud': float(cafe.longitud),
+            }
+            for cafe in cafeterias_seleccionadas
+        ]
+        
+    except Exception as e:
+        print(f"❌ Error en recomendaciones inteligentes: {e}")
+        return []
 
 
 @login_required

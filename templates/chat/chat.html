@@ -1,52 +1,799 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Chat - Asistente de Café{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Avatar CSS Styles - Tamaño completo para chat */
+    .avatar-chat {
+        position: relative;
+        width: 100px;
+        height: 140px;
+        transition: all 0.3s ease;
+    }
+
+    .avatar-welcome {
+        position: relative;
+        width: 120px;
+        height: 168px;
+        transition: all 0.3s ease;
+    }
+
+    /* Sombrero */
+    .avatar-chat .hat, .avatar-welcome .hat {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 35px;
+        height: 15px;
+        z-index: 10;
+    }
+
+    .avatar-chat .hat-top, .avatar-welcome .hat-top {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 20px;
+        height: 12px;
+        background: #dc2626;
+        border: 2px solid #000;
+        border-radius: 10px 10px 2px 2px;
+    }
+
+    .avatar-chat .hat-stripe, .avatar-welcome .hat-stripe {
+        position: absolute;
+        top: 4px;
+        left: 1px;
+        right: 1px;
+        height: 3px;
+        background: white;
+    }
+
+    .avatar-chat .hat-brim, .avatar-welcome .hat-brim {
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 35px;
+        height: 6px;
+        background: #dc2626;
+        border: 2px solid #000;
+        border-radius: 17px;
+    }
+
+    /* Cabeza - Taza blanca */
+    .avatar-chat .head, .avatar-welcome .head {
+        position: absolute;
+        top: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 55px;
+        background: white;
+        border: 2px solid #000;
+        border-radius: 5px;
+        overflow: visible;
+    }
+
+    /* Asa de la taza */
+    .avatar-chat .handle, .avatar-welcome .handle {
+        position: absolute;
+        right: -12px;
+        top: 10px;
+        width: 15px;
+        height: 20px;
+        border: 2px solid #000;
+        border-left: none;
+        background: transparent;
+        border-radius: 0 10px 10px 0;
+    }
+
+    /* Ojos */
+    .avatar-chat .eyes, .avatar-welcome .eyes {
+        position: absolute;
+        top: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 40px;
+        height: 17px;
+    }
+
+    .avatar-chat .eye, .avatar-welcome .eye {
+        position: absolute;
+        width: 15px;
+        height: 15px;
+        background: white;
+        border: 2px solid #000;
+        border-radius: 50%;
+        overflow: hidden;
+    }
+
+    .avatar-chat .eye.left, .avatar-welcome .eye.left {
+        left: 2px;
+    }
+
+    .avatar-chat .eye.right, .avatar-welcome .eye.right {
+        right: 2px;
+    }
+
+    .avatar-chat .pupil, .avatar-welcome .pupil {
+        position: absolute;
+        width: 9px;
+        height: 9px;
+        background: #000;
+        border-radius: 50%;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        transition: all 0.3s ease;
+    }
+
+    .avatar-chat .pupil::before, .avatar-welcome .pupil::before {
+        content: '';
+        position: absolute;
+        top: 1px;
+        left: 1px;
+        width: 0;
+        height: 0;
+        border-left: 3px solid white;
+        border-top: 3px solid transparent;
+        border-bottom: 3px solid transparent;
+    }
+
+    /* Nariz roja */
+    .avatar-chat .nose, .avatar-welcome .nose {
+        position: absolute;
+        top: 25px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 6px;
+        height: 6px;
+        background: #dc2626;
+        border: 1px solid #000;
+        border-radius: 50%;
+    }
+
+    /* Boca */
+    .avatar-chat .mouth, .avatar-welcome .mouth {
+        position: absolute;
+        bottom: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 17px;
+        height: 7px;
+        background: #000;
+        border-radius: 0 0 8px 8px;
+        transition: all 0.2s ease;
+    }
+
+    .avatar-chat .mouth.talking, .avatar-welcome .mouth.talking {
+        height: 12px;
+        border-radius: 8px;
+        animation: mouthMove 0.3s ease-in-out infinite alternate;
+    }
+
+    @keyframes mouthMove {
+        0% { height: 7px; width: 17px; }
+        100% { height: 15px; width: 20px; }
+    }
+
+    /* Cuerpo */
+    .avatar-chat .body, .avatar-welcome .body {
+        position: absolute;
+        top: 65px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 45px;
+        height: 35px;
+        background: #dc2626;
+        border: 2px solid #000;
+        border-radius: 5px;
+    }
+
+    /* Botones del cuerpo */
+    .avatar-chat .body-buttons, .avatar-welcome .body-buttons {
+        position: absolute;
+        top: 7px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 30px;
+        height: 20px;
+    }
+
+    .avatar-chat .button, .avatar-welcome .button {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        background: #fbbf24;
+        border: 1px solid #000;
+        border-radius: 50%;
+    }
+
+    .avatar-chat .button.top, .avatar-welcome .button.top {
+        top: 2px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    .avatar-chat .button.left, .avatar-welcome .button.left {
+        bottom: 2px;
+        left: 5px;
+    }
+
+    .avatar-chat .button.right, .avatar-welcome .button.right {
+        bottom: 2px;
+        right: 5px;
+    }
+
+    /* Brazos */
+    .avatar-chat .arms, .avatar-welcome .arms {
+        position: absolute;
+        top: 70px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 70px;
+        height: 15px;
+    }
+
+    .avatar-chat .arm, .avatar-welcome .arm {
+        position: absolute;
+        width: 17px;
+        height: 7px;
+        background: white;
+        border: 2px solid #000;
+        border-radius: 10px;
+    }
+
+    .avatar-chat .arm.left, .avatar-welcome .arm.left {
+        left: 5px;
+        transform: rotate(-15deg);
+    }
+
+    .avatar-chat .arm.right, .avatar-welcome .arm.right {
+        right: 5px;
+        transform: rotate(15deg);
+    }
+
+    /* Manos (guantes blancos) */
+    .avatar-chat .hand, .avatar-welcome .hand {
+        position: absolute;
+        width: 12px;
+        height: 10px;
+        background: white;
+        border: 2px solid #000;
+        border-radius: 50%;
+        top: -2px;
+    }
+
+    .avatar-chat .hand.left, .avatar-welcome .hand.left {
+        left: -7px;
+    }
+
+    .avatar-chat .hand.right, .avatar-welcome .hand.right {
+        right: -7px;
+    }
+
+    /* Piernas */
+    .avatar-chat .legs, .avatar-welcome .legs {
+        position: absolute;
+        top: 97px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 35px;
+        height: 30px;
+    }
+
+    .avatar-chat .leg, .avatar-welcome .leg {
+        position: absolute;
+        width: 12px;
+        height: 17px;
+        background: #dc2626;
+        border: 1px solid #000;
+        border-radius: 2px;
+    }
+
+    .avatar-chat .leg.left, .avatar-welcome .leg.left {
+        left: 4px;
+    }
+
+    .avatar-chat .leg.right, .avatar-welcome .leg.right {
+        right: 4px;
+    }
+
+    /* Zapatos */
+    .avatar-chat .shoe, .avatar-welcome .shoe {
+        position: absolute;
+        bottom: -7px;
+        width: 17px;
+        height: 9px;
+        background: #8B4513;
+        border: 1px solid #000;
+        border-radius: 7px 7px 2px 2px;
+    }
+
+    .avatar-chat .shoe.left, .avatar-welcome .shoe.left {
+        left: -2px;
+    }
+
+    .avatar-chat .shoe.right, .avatar-welcome .shoe.right {
+        right: -2px;
+    }
+
+    /* Estados de expresión */
+    .avatar-chat.happy .mouth, .avatar-welcome.happy .mouth {
+        border-radius: 7px 7px 0 0;
+        height: 10px;
+    }
+
+    .avatar-chat.sad .mouth, .avatar-welcome.sad .mouth {
+        border-radius: 0 0 7px 7px;
+        height: 5px;
+        width: 12px;
+    }
+
+    .avatar-chat.surprised .mouth, .avatar-welcome.surprised .mouth {
+        border-radius: 50%;
+        height: 10px;
+        width: 10px;
+    }
+
+    .avatar-chat.thinking .pupil, .avatar-welcome.thinking .pupil {
+        transform: translate(-70%, -30%);
+    }
+
+    /* Animaciones de estado */
+    .avatar-chat.speaking, .avatar-welcome.speaking {
+        animation: bounce 0.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes bounce {
+        0% { transform: translateY(0); }
+        100% { transform: translateY(-2px); }
+    }
+
+    .avatar-chat.listening .pupil, .avatar-welcome.listening .pupil {
+        animation: lookAround 2s ease-in-out infinite;
+    }
+
+    @keyframes lookAround {
+        0%, 100% { transform: translate(-50%, -50%); }
+        25% { transform: translate(-70%, -40%); }
+        50% { transform: translate(-30%, -60%); }
+        75% { transform: translate(-70%, -60%); }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="max-w-3xl mx-auto">
-    <div class="bg-white rounded-lg shadow-md h-[70vh] flex flex-col">
-        <div class="bg-coffee-600 text-white p-4 rounded-t-lg flex items-center justify-between">
-            <h1 class="text-lg font-semibold"><i class="fas fa-robot mr-2"></i>Asistente de Café</h1>
-            <a href="{% url 'nueva_conversacion' %}" class="text-white text-sm underline">Nueva conversación</a>
+<div class="chat-container">
+    <div class="chat-wrapper">
+        <!-- Chat Header -->
+        <div class="chat-header">
+            <div class="chat-avatar">
+                <div class="avatar-chat" id="header-avatar">
+                    <div class="hat">
+                        <div class="hat-brim"></div>
+                        <div class="hat-top">
+                            <div class="hat-stripe"></div>
+                        </div>
+                    </div>
+                    <div class="head">
+                        <div class="handle"></div>
+                        <div class="eyes">
+                            <div class="eye left">
+                                <div class="pupil"></div>
+                            </div>
+                            <div class="eye right">
+                                <div class="pupil"></div>
+                            </div>
+                        </div>
+                        <div class="nose"></div>
+                        <div class="mouth"></div>
+                    </div>
+                    <div class="body">
+                        <div class="body-buttons">
+                            <div class="button top"></div>
+                            <div class="button left"></div>
+                            <div class="button right"></div>
+                        </div>
+                    </div>
+                    <div class="arms">
+                        <div class="arm left">
+                            <div class="hand left"></div>
+                        </div>
+                        <div class="arm right">
+                            <div class="hand right"></div>
+                        </div>
+                    </div>
+                    <div class="legs">
+                        <div class="leg left">
+                            <div class="shoe left"></div>
+                        </div>
+                        <div class="leg right">
+                            <div class="shoe right"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="chat-header-info">
+                <h1 class="chat-header-title">Hi, I'm Nelly!</h1>
+                <p class="chat-header-subtitle">I'm here to help, so if you have any questions, go ahead and ask me!</p>
+            </div>
+            <div class="chat-actions">
+                <a href="{% url 'nueva_conversacion' %}" class="btn-header">
+                    <i class="fas fa-plus"></i>
+                    Nueva conversación
+                </a>
+            </div>
         </div>
-        <div id="chat-body" class="flex-1 p-4 overflow-y-auto space-y-3">
+
+        <!-- Chat Messages -->
+        <div id="chat-messages" class="chat-messages">
+            {% if not mensajes %}
+                <div class="welcome-message">
+                    <div class="welcome-layout">
+                        <div class="welcome-avatar">
+                            <div class="avatar-welcome" id="welcome-avatar">
+                                <div class="hat">
+                                    <div class="hat-brim"></div>
+                                    <div class="hat-top">
+                                        <div class="hat-stripe"></div>
+                                    </div>
+                                </div>
+                                <div class="head">
+                                    <div class="handle"></div>
+                                    <div class="eyes">
+                                        <div class="eye left">
+                                            <div class="pupil"></div>
+                                        </div>
+                                        <div class="eye right">
+                                            <div class="pupil"></div>
+                                        </div>
+                                    </div>
+                                    <div class="nose"></div>
+                                    <div class="mouth"></div>
+                                </div>
+                                <div class="body">
+                                    <div class="body-buttons">
+                                        <div class="button top"></div>
+                                        <div class="button left"></div>
+                                        <div class="button right"></div>
+                                    </div>
+                                </div>
+                                <div class="arms">
+                                    <div class="arm left">
+                                        <div class="hand left"></div>
+                                    </div>
+                                    <div class="arm right">
+                                        <div class="hand right"></div>
+                                    </div>
+                                </div>
+                                <div class="legs">
+                                    <div class="leg left">
+                                        <div class="shoe left"></div>
+                                    </div>
+                                    <div class="leg right">
+                                        <div class="shoe right"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="welcome-content">
+                            <h2 class="welcome-title">¡Hola! Soy Nelly</h2>
+                            <p class="welcome-subtitle">Tu asistente virtual para encontrar las mejores cafeterías en Sucre</p>
+                            <div class="welcome-suggestions">
+                                <button class="suggestion-button" onclick="sendSuggestion('¿Qué cafeterías me recomiendas?')">
+                                    ¿Qué cafeterías me recomiendas?
+                                </button>
+                                <button class="suggestion-button" onclick="sendSuggestion('Busco una cafetería cerca de mi ubicación')">
+                                    Busco una cafetería cerca de mi ubicación
+                                </button>
+                                <button class="suggestion-button" onclick="sendSuggestion('¿Cuáles tienen el mejor café?')">
+                                    ¿Cuáles tienen el mejor café?
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            
             {% for m in mensajes %}
-                <div class="{{ 'bg-coffee-600 text-white ml-8' if m.tipo == 'U' else 'bg-gray-100 mr-8' }} p-3 rounded-lg">
-                    <p class="text-sm">
-                        <i class="{{ 'fas fa-user' if m.tipo == 'U' else 'fas fa-robot' }} mr-1"></i>
-                        {{ m.contenido }}
-                    </p>
+                <div class="message {{ 'user' if m.tipo == 'U' else 'bot' }}">
+                    <div class="message-content">
+                        <div class="message-avatar">
+                            {% if m.tipo == 'U' %}
+                                <i class="fas fa-user"></i>
+                            {% else %}
+                                <div class="avatar-chat message-bot-avatar">
+                                    <div class="hat">
+                                        <div class="hat-brim"></div>
+                                        <div class="hat-top">
+                                            <div class="hat-stripe"></div>
+                                        </div>
+                                    </div>
+                                    <div class="head">
+                                        <div class="handle"></div>
+                                        <div class="eyes">
+                                            <div class="eye left">
+                                                <div class="pupil"></div>
+                                            </div>
+                                            <div class="eye right">
+                                                <div class="pupil"></div>
+                                            </div>
+                                        </div>
+                                        <div class="nose"></div>
+                                        <div class="mouth"></div>
+                                    </div>
+                                    <div class="body">
+                                        <div class="body-buttons">
+                                            <div class="button top"></div>
+                                            <div class="button left"></div>
+                                            <div class="button right"></div>
+                                        </div>
+                                    </div>
+                                    <div class="arms">
+                                        <div class="arm left">
+                                            <div class="hand left"></div>
+                                        </div>
+                                        <div class="arm right">
+                                            <div class="hand right"></div>
+                                        </div>
+                                    </div>
+                                    <div class="legs">
+                                        <div class="leg left">
+                                            <div class="shoe left"></div>
+                                        </div>
+                                        <div class="leg right">
+                                            <div class="shoe right"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="message-bubble">
+                            <p class="message-text">{{ m.contenido }}</p>
+                            <div class="message-time">{{ m.fecha_creacion|date:"H:i" }}</div>
+                        </div>
+                    </div>
                 </div>
             {% endfor %}
         </div>
-        <div class="p-4 border-t">
-            <div class="flex space-x-2">
-                <input id="msg" type="text" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-coffee-500" placeholder="Escribe tu mensaje...">
-                <button id="send" class="bg-coffee-600 hover:bg-coffee-700 text-white px-4 py-2 rounded-lg"><i class="fas fa-paper-plane"></i></button>
+
+        <!-- Chat Input -->
+        <div class="chat-input">
+            <div class="input-container">
+                <input 
+                    id="message-input" 
+                    type="text" 
+                    class="message-input" 
+                    placeholder="Enter your question"
+                    autocomplete="off"
+                >
+                <button id="send-button" class="send-button" type="button">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    const bodyEl = document.getElementById('chat-body');
-    const msgEl = document.getElementById('msg');
-    const sendEl = document.getElementById('send');
+    const messagesContainer = document.getElementById('chat-messages');
+    const messageInput = document.getElementById('message-input');
+    const sendButton = document.getElementById('send-button');
+    let isTyping = false;
 
-    function addMsg(text, user) {
-        const div = document.createElement('div');
-        div.className = (user ? 'bg-coffee-600 text-white ml-8' : 'bg-gray-100 mr-8') + ' p-3 rounded-lg';
-        div.innerHTML = `<p class="text-sm"><i class="${user ? 'fas fa-user' : 'fas fa-robot'} mr-1"></i>${text}</p>`;
-        bodyEl.appendChild(div);
-        bodyEl.scrollTop = bodyEl.scrollHeight;
+    // Función para cambiar expresión del avatar
+    function setAvatarExpression(expression) {
+        const avatars = document.querySelectorAll('.avatar-chat, .avatar-welcome');
+        
+        // Remover todas las clases de expresión
+        avatars.forEach(avatar => {
+            avatar.classList.remove('happy', 'sad', 'surprised', 'thinking', 'speaking', 'listening');
+        });
+        
+        // Aplicar nueva expresión
+        switch(expression) {
+            case 'speaking':
+                avatars.forEach(avatar => {
+                    avatar.classList.add('speaking');
+                    const mouth = avatar.querySelector('.mouth');
+                    if (mouth) mouth.classList.add('talking');
+                });
+                break;
+            case 'idle':
+                avatars.forEach(avatar => {
+                    avatar.classList.remove('speaking', 'listening');
+                    const mouth = avatar.querySelector('.mouth');
+                    if (mouth) mouth.classList.remove('talking');
+                });
+                break;
+            case 'listening':
+                avatars.forEach(avatar => {
+                    avatar.classList.add('listening');
+                });
+                break;
+            case 'thinking':
+                avatars.forEach(avatar => {
+                    avatar.classList.add('thinking');
+                });
+                break;
+            case 'happy':
+                avatars.forEach(avatar => {
+                    avatar.classList.add('happy');
+                });
+                break;
+        }
     }
 
-    function send() {
-        const text = msgEl.value.trim();
-        if (!text) return;
-        addMsg(text, true);
-        msgEl.value = '';
-        fetch('{% url 'enviar_mensaje' %}', {
+    function addMessage(text, isUser = false) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
+        
+        const currentTime = new Date().toLocaleTimeString('es-ES', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+        
+        messageDiv.innerHTML = `
+            <div class="message-content">
+                <div class="message-avatar">
+                    ${isUser ? '<i class="fas fa-user"></i>' : `
+                        <div class="avatar-chat message-bot-avatar">
+                            <div class="hat">
+                                <div class="hat-brim"></div>
+                                <div class="hat-top">
+                                    <div class="hat-stripe"></div>
+                                </div>
+                            </div>
+                            <div class="head">
+                                <div class="handle"></div>
+                                <div class="eyes">
+                                    <div class="eye left">
+                                        <div class="pupil"></div>
+                                    </div>
+                                    <div class="eye right">
+                                        <div class="pupil"></div>
+                                    </div>
+                                </div>
+                                <div class="nose"></div>
+                                <div class="mouth"></div>
+                            </div>
+                            <div class="body">
+                                <div class="body-buttons">
+                                    <div class="button top"></div>
+                                    <div class="button left"></div>
+                                    <div class="button right"></div>
+                                </div>
+                            </div>
+                            <div class="arms">
+                                <div class="arm left">
+                                    <div class="hand left"></div>
+                                </div>
+                                <div class="arm right">
+                                    <div class="hand right"></div>
+                                </div>
+                            </div>
+                            <div class="legs">
+                                <div class="leg left">
+                                    <div class="shoe left"></div>
+                                </div>
+                                <div class="leg right">
+                                    <div class="shoe right"></div>
+                                </div>
+                            </div>
+                        </div>
+                    `}
+                </div>
+                <div class="message-bubble">
+                    <p class="message-text">${text}</p>
+                    <div class="message-time">${currentTime}</div>
+                </div>
+            </div>
+        `;
+        
+        messagesContainer.appendChild(messageDiv);
+        scrollToBottom();
+        
+        // Remove welcome message if it exists
+        const welcomeMessage = document.querySelector('.welcome-message');
+        if (welcomeMessage) {
+            welcomeMessage.remove();
+        }
+    }
+
+    function showTyping() {
+        if (isTyping) return;
+        isTyping = true;
+        
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'message bot typing-message';
+        typingDiv.innerHTML = `
+            <div class="message-content">
+                <div class="message-avatar">
+                    <div class="avatar-chat thinking">
+                        <div class="hat">
+                            <div class="hat-brim"></div>
+                            <div class="hat-top">
+                                <div class="hat-stripe"></div>
+                            </div>
+                        </div>
+                        <div class="head">
+                            <div class="handle"></div>
+                            <div class="eyes">
+                                <div class="eye left">
+                                    <div class="pupil"></div>
+                                </div>
+                                <div class="eye right">
+                                    <div class="pupil"></div>
+                                </div>
+                            </div>
+                            <div class="nose"></div>
+                            <div class="mouth"></div>
+                        </div>
+                        <div class="body">
+                            <div class="body-buttons">
+                                <div class="button top"></div>
+                                <div class="button left"></div>
+                                <div class="button right"></div>
+                            </div>
+                        </div>
+                        <div class="arms">
+                            <div class="arm left">
+                                <div class="hand left"></div>
+                            </div>
+                            <div class="arm right">
+                                <div class="hand right"></div>
+                            </div>
+                        </div>
+                        <div class="legs">
+                            <div class="leg left">
+                                <div class="shoe left"></div>
+                            </div>
+                            <div class="leg right">
+                                <div class="shoe right"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="typing-indicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            </div>
+        `;
+        
+        messagesContainer.appendChild(typingDiv);
+        scrollToBottom();
+    }
+
+    function hideTyping() {
+        isTyping = false;
+        const typingMessage = document.querySelector('.typing-message');
+        if (typingMessage) {
+            typingMessage.remove();
+        }
+    }
+
+    function scrollToBottom() {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function sendMessage() {
+        const text = messageInput.value.trim();
+        if (!text || isTyping) return;
+
+        addMessage(text, true);
+        messageInput.value = '';
+        sendButton.disabled = true;
+        showTyping();
+        setAvatarExpression('thinking');
+
+        fetch("{% url 'enviar_mensaje' %}", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -54,19 +801,59 @@
             },
             body: JSON.stringify({ mensaje: text })
         })
-        .then(r => r.json())
+        .then(response => response.json())
         .then(data => {
+            hideTyping();
             if (data.success) {
-                addMsg(data.mensaje_bot, false);
+                addMessage(data.mensaje_bot, false);
+                setAvatarExpression('happy');
+                setTimeout(() => setAvatarExpression('idle'), 2000);
             } else {
-                addMsg('Error enviando mensaje', false);
+                addMessage('Lo siento, hubo un error procesando tu mensaje. Por favor intenta de nuevo.', false);
+                setAvatarExpression('sad');
+                setTimeout(() => setAvatarExpression('idle'), 2000);
             }
         })
-        .catch(() => addMsg('Error de red', false));
+        .catch(error => {
+            hideTyping();
+            addMessage('Error de conexión. Por favor verifica tu internet e intenta de nuevo.', false);
+            setAvatarExpression('sad');
+            setTimeout(() => setAvatarExpression('idle'), 2000);
+        })
+        .finally(() => {
+            sendButton.disabled = false;
+        });
     }
 
-    sendEl.addEventListener('click', send);
-    msgEl.addEventListener('keypress', e => { if (e.key === 'Enter') send(); });
+    function sendSuggestion(text) {
+        messageInput.value = text;
+        sendMessage();
+    }
+
+    // Event Listeners
+    sendButton.addEventListener('click', sendMessage);
+    
+    messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    messageInput.addEventListener('input', () => {
+        sendButton.disabled = !messageInput.value.trim();
+    });
+
+    // Auto-resize textarea
+    messageInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+    });
+
+    // Initialize
+    scrollToBottom();
+    sendButton.disabled = true;
+    setAvatarExpression('idle');
 </script>
 {% endblock %}
 

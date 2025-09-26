@@ -28,11 +28,16 @@ class Cafeteria(models.Model):
     latitud = models.DecimalField(max_digits=10, decimal_places=7)
     longitud = models.DecimalField(max_digits=10, decimal_places=7)
     telefono = models.CharField(max_length=20, blank=True, null=True)
-    horario_apertura = models.TimeField()
-    horario_cierre = models.TimeField()
-    dias_apertura = models.CharField(max_length=100, default="Lunes a Domingo")
+    horario = models.CharField(max_length=100, default="L-D: 8:00-20:00")
     imagen = models.ImageField(upload_to='cafeterias/', blank=True, null=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
+    
+    # Campos adicionales para la población de datos
+    precio_promedio = models.DecimalField(max_digits=8, decimal_places=2, default=15.00)
+    wifi = models.BooleanField(default=True)
+    terraza = models.BooleanField(default=False)
+    estacionamiento = models.BooleanField(default=False)
+    zona = models.CharField(max_length=50, default="Centro")
     
     # Métricas
     calificacion_promedio = models.DecimalField(max_digits=3, decimal_places=2, default=0.00)
@@ -50,9 +55,28 @@ class Cafeteria(models.Model):
 class TipoCafe(models.Model):
     nombre = models.CharField(max_length=100)
     descripcion = models.TextField()
+    intensidad = models.PositiveIntegerField(default=5, validators=[MinValueValidator(1), MaxValueValidator(10)])
+    precio_base = models.DecimalField(max_digits=8, decimal_places=2, default=15.00)
     
     def __str__(self):
         return self.nombre
+
+
+class Producto(models.Model):
+    cafeteria = models.ForeignKey(Cafeteria, on_delete=models.CASCADE, related_name='productos')
+    tipo_cafe = models.ForeignKey(TipoCafe, on_delete=models.CASCADE)
+    nombre = models.CharField(max_length=200)
+    descripcion = models.TextField()
+    precio = models.DecimalField(max_digits=8, decimal_places=2)
+    disponible = models.BooleanField(default=True)
+    popular = models.BooleanField(default=False)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ['cafeteria', 'nombre']
+    
+    def __str__(self):
+        return f"{self.nombre} - {self.cafeteria.nombre}"
 
 
 class CafeteriaTipoCafe(models.Model):
@@ -69,10 +93,14 @@ class Recorrido(models.Model):
     nombre = models.CharField(max_length=200)
     descripcion = models.TextField()
     cafeterias = models.ManyToManyField(Cafeteria, through='RecorridoCafeteria')
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='recorridos_creados', null=True, blank=True)
     duracion_estimada = models.PositiveIntegerField(help_text="Duración en minutos")
     distancia_total = models.DecimalField(max_digits=8, decimal_places=2, help_text="Distancia en kilómetros")
+    dificultad = models.CharField(max_length=50, default="Fácil")
+    precio_total = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     activo = models.BooleanField(default=True)
+    destacado = models.BooleanField(default=False)
     
     def __str__(self):
         return self.nombre
