@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba - Mapa de Cafeterías</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
+          crossorigin=""/>
+    
+    <!-- Configuración de Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'coffee': {
+                            500: '#8B4513',
+                            600: '#7A3F12',
+                            700: '#6B3410'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center mb-8 text-coffee-700">
+            <i class="fas fa-coffee mr-2"></i>
+            Prueba del Mapa de Cafeterías
+        </h1>
+        
+        <!-- Controles del mapa -->
+        <div class="mb-4 flex flex-wrap gap-2 justify-between items-center bg-white p-4 rounded-lg shadow">
+            <div class="flex flex-wrap gap-2">
+                <button onclick="centrarEnUbicacionActual()" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition duration-200">
+                    <i class="fas fa-crosshairs mr-1"></i>
+                    Mi Ubicación
+                </button>
+                <button onclick="mostrarTodasLasCafeterias()" 
+                        class="bg-coffee-600 hover:bg-coffee-700 text-white px-4 py-2 rounded-lg text-sm transition duration-200">
+                    <i class="fas fa-coffee mr-1"></i>
+                    Ver Todas las Cafeterías
+                </button>
+            </div>
+            <div class="flex items-center text-sm text-gray-600 gap-4">
+                <div class="flex items-center">
+                    <div class="w-5 h-5 bg-coffee-600 rounded-full mr-2 flex items-center justify-center border-2 border-white shadow-md">
+                        <span style="font-size: 10px; color: white;">☕</span>
+                    </div>
+                    <span>Cafeterías</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 bg-blue-600 rounded-full mr-2 flex items-center justify-center border-2 border-white shadow-md">
+                        <span style="font-size: 8px; color: white;">📍</span>
+                    </div>
+                    <span>Tu ubicación</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Nuevas funcionalidades -->
+        <div class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="p-3 bg-green-50 border-l-4 border-green-500 rounded-r-lg">
+                <div class="flex items-center">
+                    <i class="fas fa-satellite mr-2 text-green-600"></i>
+                    <span class="text-sm text-green-800">
+                        <strong>Vista Satelital:</strong> Cambia entre Calles y Satélite usando el control superior derecho.
+                    </span>
+                </div>
+            </div>
+            <div class="p-3 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg">
+                <div class="flex items-center">
+                    <i class="fas fa-crosshairs mr-2 text-blue-600"></i>
+                    <span class="text-sm text-blue-800">
+                        <strong>Control de Ubicación:</strong> Haz clic en el botón de ubicación (estilo Google Maps) dentro del mapa para centrar en tu ubicación.
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mapa -->
+        <div id="mapa-cafeterias" class="w-full rounded-lg border border-gray-300 shadow-lg" style="height: 500px;">
+            <div class="flex items-center justify-center h-full bg-gray-50">
+                <div class="text-center">
+                    <i class="fas fa-spinner fa-spin text-4xl text-coffee-600 mb-4"></i>
+                    <p class="text-gray-600">Cargando mapa interactivo...</p>
+                    <p class="text-sm text-gray-500 mt-2">Se solicitará permiso para usar tu ubicación</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Estado del sistema -->
+        <div class="mt-6 bg-white p-4 rounded-lg shadow">
+            <h3 class="text-lg font-semibold mb-3 text-coffee-700">Estado del Sistema</h3>
+            <div id="system-status" class="space-y-2">
+                <div class="text-sm text-gray-600">
+                    <i class="fas fa-circle text-yellow-500 mr-2"></i>
+                    Cargando...
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+    
+    <!-- Datos de prueba -->
+    <script>
+        // Datos de cafeterías de prueba (usando los datos reales de tu base de datos)
+        const cafeteriasData = [
+            {
+                "id": 1,
+                "nombre": "Café Time & Coffee",
+                "direccion": "Km. 7, Centro Histórico",
+                "latitud": -19.0478000,
+                "longitud": -65.2595000,
+                "telefono": "No disponible",
+                "horario": "L-D: 8:00-20:00",
+                "calificacion_promedio": 4.60,
+                "total_calificaciones": 15,
+                "total_me_gusta": 25
+            },
+            {
+                "id": 2,
+                "nombre": "Café Mirador San Miguel",
+                "direccion": "Arenales 10, Centro",
+                "latitud": -19.0465000,
+                "longitud": -65.2580000,
+                "telefono": "No disponible",
+                "horario": "L-D: 8:00-20:00",
+                "calificacion_promedio": 4.40,
+                "total_calificaciones": 12,
+                "total_me_gusta": 18
+            },
+            {
+                "id": 3,
+                "nombre": "Typica Café Sucre",
+                "direccion": "Azurduy 118, Centro",
+                "latitud": -19.0489000,
+                "longitud": -65.2602000,
+                "telefono": "No disponible",
+                "horario": "L-D: 8:00-20:00",
+                "calificacion_promedio": 4.70,
+                "total_calificaciones": 20,
+                "total_me_gusta": 32
+            },
+            {
+                "id": 4,
+                "nombre": "Kaffa Bunn - Speciality Coffee",
+                "direccion": "Calvo 185, Centro",
+                "latitud": -19.0495000,
+                "longitud": -65.2588000,
+                "telefono": "No disponible",
+                "horario": "L-D: 8:00-20:00",
+                "calificacion_promedio": 4.80,
+                "total_calificaciones": 25,
+                "total_me_gusta": 40
+            },
+            {
+                "id": 5,
+                "nombre": "SOMOS - Specialty Coffee",
+                "direccion": "Km 7 73, Zona Norte",
+                "latitud": -19.0395000,
+                "longitud": -65.2548000,
+                "telefono": "No disponible",
+                "horario": "L-D: 8:00-20:00",
+                "calificacion_promedio": 4.70,
+                "total_calificaciones": 18,
+                "total_me_gusta": 28
+            }
+        ];
+        
+        console.log('📊 Datos de cafeterías cargados:', cafeteriasData.length, 'cafeterías');
+        
+        // Función para actualizar el estado del sistema
+        function actualizarEstado(mensaje, tipo = 'info') {
+            const statusDiv = document.getElementById('system-status');
+            const iconClass = tipo === 'success' ? 'text-green-500' : 
+                            tipo === 'error' ? 'text-red-500' : 
+                            tipo === 'warning' ? 'text-yellow-500' : 'text-blue-500';
+            
+            const nuevoEstado = document.createElement('div');
+            nuevoEstado.className = 'text-sm text-gray-600';
+            nuevoEstado.innerHTML = `<i class="fas fa-circle ${iconClass} mr-2"></i>${mensaje}`;
+            
+            statusDiv.appendChild(nuevoEstado);
+            
+            // Mantener solo los últimos 5 mensajes
+            while (statusDiv.children.length > 5) {
+                statusDiv.removeChild(statusDiv.firstChild);
+            }
+        }
+        
+        // Inicializar estado
+        actualizarEstado('Sistema iniciado', 'info');
+    </script>
+    
+    <!-- Script del mapa (una versión simplificada) -->
+    <script>
+        let map;
+        let userLocationMarker;
+        let cafeteriasMarkers = [];
+
+        // Coordenadas de Sucre como centro por defecto
+        const SUCRE_COORDS = [-19.0478, -65.2595];
+
+        // Icono personalizado para cafeterías (taza blanca con fondo café)
+        const cafeteriaIcon = L.divIcon({
+            className: 'custom-cafeteria-icon',
+            html: `
+                <div style="
+                    background-color: #8B4513;
+                    color: white;
+                    width: 35px;
+                    height: 35px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 18px;
+                    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+                    border: 3px solid #ffffff;
+                ">
+                    ☕
+                </div>
+            `,
+            iconSize: [35, 35],
+            iconAnchor: [17.5, 17.5],
+            popupAnchor: [0, -17.5]
+        });
+
+        // Icono personalizado para ubicación actual (estilo exacto de la imagen)
+        const userLocationIcon = L.divIcon({
+            className: 'user-location-icon',
+            html: `
+                <div style="
+                    position: relative;
+                    width: 20px;
+                    height: 20px;
+                ">
+                    <!-- Círculo exterior azul claro -->
+                    <div style="
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        width: 20px;
+                        height: 20px;
+                        background-color: rgba(66, 133, 244, 0.3);
+                        border-radius: 50%;
+                        animation: pulse 2s infinite;
+                    "></div>
+                    <!-- Punto central azul -->
+                    <div style="
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        width: 8px;
+                        height: 8px;
+                        background-color: #4285f4;
+                        border: 2px solid #ffffff;
+                        border-radius: 50%;
+                        box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+                    "></div>
+                </div>
+                <style>
+                    @keyframes pulse {
+                        0% { 
+                            transform: translate(-50%, -50%) scale(1); 
+                            opacity: 1; 
+                        }
+                        70% { 
+                            transform: translate(-50%, -50%) scale(3); 
+                            opacity: 0; 
+                        }
+                        100% { 
+                            transform: translate(-50%, -50%) scale(3); 
+                            opacity: 0; 
+                        }
+                    }
+                </style>
+            `,
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+        });
+
+        // Inicializar el mapa
+        function inicializarMapa() {
+            try {
+                actualizarEstado('Inicializando mapa...', 'info');
+                
+                // Crear el mapa centrado en Sucre
+                map = L.map('mapa-cafeterias').setView(SUCRE_COORDS, 13);
+
+                // Definir solo 2 capas base: Calles y Satélite
+                const capas = {
+                    // Capa de calles (OpenStreetMap)
+                    'Calles': L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap contributors',
+                        maxZoom: 19
+                    }),
+                    
+                    // Capa satelital (Esri World Imagery)
+                    'Satélite': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                        attribution: '© Esri, Maxar, GeoEye, Earthstar Geographics, CNES/Airbus DS, USDA, USGS, AeroGRID, IGN, and the GIS User Community',
+                        maxZoom: 19
+                    })
+                };
+
+                // Agregar la capa por defecto (Calles)
+                capas['Calles'].addTo(map);
+
+                // Agregar control de capas
+                L.control.layers(capas, null, {
+                    position: 'topright',
+                    collapsed: false
+                }).addTo(map);
+
+                // Agregar control de ubicación integrado con icono de Google Maps
+                const controlUbicacion = L.Control.extend({
+                    onAdd: function(map) {
+                        const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+                        
+                        container.style.backgroundColor = 'white';
+                        container.style.backgroundImage = 'none';
+                        container.style.width = '40px';
+                        container.style.height = '40px';
+                        container.style.cursor = 'pointer';
+                        container.style.borderRadius = '2px';
+                        container.style.border = '2px solid rgba(0,0,0,0.2)';
+                        container.style.display = 'flex';
+                        container.style.alignItems = 'center';
+                        container.style.justifyContent = 'center';
+                        container.style.fontSize = '18px';
+                        container.style.boxShadow = '0 1px 5px rgba(0,0,0,0.65)';
+                        container.title = 'Ir a mi ubicación';
+                        
+                        // Icono de ubicación estilo Google Maps (punto con círculo)
+                        container.innerHTML = `
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="10" stroke="#666666" stroke-width="2" fill="none"/>
+                                <circle cx="12" cy="12" r="3" fill="#4285f4"/>
+                            </svg>
+                        `;
+                        
+                        container.onclick = function() {
+                            // Cambiar a azul cuando se presiona
+                            container.style.backgroundColor = '#4285f4';
+                            container.innerHTML = `
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                    <circle cx="12" cy="12" r="10" stroke="white" stroke-width="2" fill="none"/>
+                                    <circle cx="12" cy="12" r="3" fill="white"/>
+                                </svg>
+                            `;
+                            
+                            centrarEnUbicacionActual();
+                            
+                            // Restaurar estilo después de 1 segundo
+                            setTimeout(() => {
+                                container.style.backgroundColor = 'white';
+                                container.innerHTML = `
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                        <circle cx="12" cy="12" r="10" stroke="#666666" stroke-width="2" fill="none"/>
+                                        <circle cx="12" cy="12" r="3" fill="#4285f4"/>
+                                    </svg>
+                                `;
+                            }, 1000);
+                        };
+                        
+                        // Prevenir que el clic se propague al mapa
+                        L.DomEvent.disableClickPropagation(container);
+                        
+                        return container;
+                    }
+                });
+
+                // Agregar el control de ubicación al mapa
+                new controlUbicacion({ position: 'topleft' }).addTo(map);
+
+                // Agregar control de escala
+                L.control.scale({
+                    position: 'bottomleft',
+                    metric: true,
+                    imperial: false
+                }).addTo(map);
+
+                actualizarEstado('Mapa inicializado con múltiples capas', 'success');
+                
+                // Obtener ubicación del usuario
+                obtenerUbicacionUsuario();
+                
+                // Cargar cafeterías
+                cargarCafeterias();
+                
+            } catch (error) {
+                console.error('❌ Error al inicializar el mapa:', error);
+                actualizarEstado('Error al inicializar el mapa', 'error');
+            }
+        }
+
+        // Obtener la ubicación actual del usuario
+        function obtenerUbicacionUsuario() {
+            if (navigator.geolocation) {
+                actualizarEstado('Solicitando ubicación del usuario...', 'info');
+                
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        const precision = position.coords.accuracy;
+                        
+                        actualizarEstado(`Ubicación obtenida: ${lat.toFixed(6)}, ${lng.toFixed(6)}`, 'success');
+                        
+                        // Agregar marcador de ubicación actual
+                        if (userLocationMarker) {
+                            map.removeLayer(userLocationMarker);
+                        }
+                        
+                        userLocationMarker = L.marker([lat, lng], {
+                            icon: userLocationIcon,
+                            title: 'Tu ubicación actual'
+                        }).addTo(map);
+                        
+                        userLocationMarker.bindPopup(`
+                            <div class="text-center">
+                                <strong>📍 Tu ubicación actual</strong><br>
+                                <small>Lat: ${lat.toFixed(6)}</small><br>
+                                <small>Lng: ${lng.toFixed(6)}</small><br>
+                                <small>Precisión: ~${Math.round(precision)}m</small>
+                            </div>
+                        `);
+                        
+                    },
+                    function(error) {
+                        actualizarEstado('Error al obtener ubicación: ' + error.message, 'warning');
+                        console.log('⚠️ Error al obtener ubicación:', error.message);
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 300000 // 5 minutos
+                    }
+                );
+            } else {
+                actualizarEstado('Geolocalización no soportada por este navegador', 'warning');
+                console.log('❌ Geolocalización no soportada por este navegador');
+            }
+        }
+
+        // Cargar todas las cafeterías
+        function cargarCafeterias() {
+            if (cafeteriasData && cafeteriasData.length > 0) {
+                actualizarEstado(`Cargando ${cafeteriasData.length} cafeterías...`, 'info');
+                
+                // Limpiar marcadores anteriores
+                cafeteriasMarkers.forEach(marker => map.removeLayer(marker));
+                cafeteriasMarkers = [];
+                
+                // Agregar marcador para cada cafetería
+                cafeteriasData.forEach(cafeteria => {
+                    try {
+                        const marker = L.marker(
+                            [parseFloat(cafeteria.latitud), parseFloat(cafeteria.longitud)],
+                            {
+                                icon: cafeteriaIcon,
+                                title: cafeteria.nombre
+                            }
+                        ).addTo(map);
+                        
+                        // Popup con información de la cafetería
+                        marker.bindPopup(`
+                            <div class="max-w-sm">
+                                <h3 class="font-bold text-lg text-coffee-700 mb-2">
+                                    ☕ ${cafeteria.nombre}
+                                </h3>
+                                <div class="text-sm text-gray-600 space-y-1">
+                                    <p><i class="fas fa-map-marker-alt mr-1"></i> ${cafeteria.direccion}</p>
+                                    <p><i class="fas fa-star mr-1 text-yellow-500"></i> ${cafeteria.calificacion_promedio} 
+                                       <span class="text-xs">(${cafeteria.total_calificaciones} reseñas)</span></p>
+                                    <p><i class="fas fa-heart mr-1 text-red-500"></i> ${cafeteria.total_me_gusta} me gusta</p>
+                                    <p><i class="fas fa-clock mr-1"></i> ${cafeteria.horario}</p>
+                                    <p><i class="fas fa-phone mr-1"></i> ${cafeteria.telefono || 'No disponible'}</p>
+                                </div>
+                                <div class="mt-3 flex space-x-2">
+                                    <button onclick="navegarACafeteria(${cafeteria.latitud}, ${cafeteria.longitud})" 
+                                            class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs transition duration-200">
+                                        <i class="fas fa-directions mr-1"></i> Ir
+                                    </button>
+                                </div>
+                            </div>
+                        `);
+                        
+                        cafeteriasMarkers.push(marker);
+                        
+                    } catch (error) {
+                        console.error(`❌ Error al crear marcador para ${cafeteria.nombre}:`, error);
+                    }
+                });
+                
+                actualizarEstado(`${cafeteriasMarkers.length} cafeterías cargadas en el mapa`, 'success');
+                
+            } else {
+                actualizarEstado('No hay datos de cafeterías disponibles', 'error');
+            }
+        }
+
+        // Función para navegar a una cafetería
+        function navegarACafeteria(lat, lng) {
+            const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+            window.open(url, '_blank');
+        }
+
+        // Botón para centrar en ubicación actual
+        function centrarEnUbicacionActual() {
+            if (userLocationMarker) {
+                map.setView(userLocationMarker.getLatLng(), 16);
+                // NO abrir popup - solo centrar en la ubicación
+                actualizarEstado('Centrado en ubicación actual', 'info');
+            } else {
+                obtenerUbicacionUsuario();
+            }
+        }
+
+        // Botón para mostrar todas las cafeterías
+        function mostrarTodasLasCafeterias() {
+            if (cafeteriasMarkers.length > 0) {
+                const group = new L.featureGroup(cafeteriasMarkers);
+                map.fitBounds(group.getBounds().pad(0.1));
+                actualizarEstado('Mostrando todas las cafeterías', 'info');
+            }
+        }
+
+        // Inicializar cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', function() {
+            actualizarEstado('DOM cargado, inicializando...', 'info');
+            setTimeout(inicializarMapa, 500);
+        });
+    </script>
+</body>
+</html>

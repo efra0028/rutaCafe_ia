@@ -92,123 +92,42 @@
         </div>
     </div>
 
-    <!-- Map Section - SIMPLIFICADO -->
+    <!-- Map Section - INTERACTIVO CON LEAFLET -->
     <div id="map-section" class="bg-white rounded-lg shadow-md p-6">
         <h2 class="text-2xl font-bold text-gray-800 mb-6">
             <i class="fas fa-map mr-2 text-blue-500"></i>
             Mapa de Cafeterías
         </h2>
         
-        <!-- Google Maps Embed - INSTANTÁNEO -->
-        <div class="w-full h-96 rounded-lg border border-gray-300 mb-6">
-            <iframe 
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d30458.234567!2d-65.2595!3d-19.0478!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x93fbcf0f1b2e8b1d%3A0x8a2f2b8e4f1c7d3e!2sSucre%2C%20Bolivia!5e0!3m2!1sen!2sus!4v1234567890"
-                width="100%" 
-                height="100%" 
-                style="border:0; border-radius: 8px;" 
-                allowfullscreen="" 
-                loading="eager"
-                referrerpolicy="no-referrer-when-downgrade"
-                title="Mapa de Sucre con Cafeterías">
-            </iframe>
+        <!-- Controles del mapa -->
+        <div class="mb-4 flex flex-wrap gap-2 justify-between items-center">
+            <div class="flex flex-wrap gap-2">
+                
+                <button onclick="mostrarTodasLasCafeterias()" 
+                        class="bg-coffee-600 hover:bg-coffee-700 text-white px-4 py-2 rounded-lg text-sm transition duration-200">
+                    <i class="fas fa-coffee mr-1"></i>
+                    Ver Todas
+                </button>
+            </div>
+          
         </div>
         
-        <!-- Mapa Visual por Zonas - APARECE INSTANTÁNEAMENTE -->
-        <div id="cafeterias-visual-map" class="mt-6">
-            <h3 class="text-xl font-semibold mb-4 text-coffee-700">📍 Todas las Cafeterías por Zona:</h3>
-            
-            <!-- Centro -->
-            <div class="mb-6 p-4 bg-red-50 rounded-lg border-l-4 border-red-500">
-                <h4 class="font-bold text-lg text-red-700 mb-3">🏛️ ZONA CENTRO ({{ cafeterias|length|add:"-12" }} cafeterías)</h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                    {% for cafeteria in cafeterias %}
-                        {% if cafeteria.zona == 'Centro' %}
-                        <div class="bg-white p-3 rounded-lg shadow-sm border hover:shadow-md transition-shadow cursor-pointer"
-                             onclick="window.open('/cafeteria/{{ cafeteria.id }}/', '_blank');">
-                            <div class="flex items-center mb-2">
-                                <span class="text-2xl mr-2">☕</span>
-                                <h5 class="font-semibold text-sm text-coffee-700">{{ cafeteria.nombre|truncatechars:20 }}</h5>
-                            </div>
-                            <p class="text-xs text-gray-600 mb-1">📍 {{ cafeteria.direccion|truncatechars:25 }}</p>
-                            <div class="flex items-center justify-between text-xs">
-                                <span class="text-yellow-600">⭐ {{ cafeteria.calificacion_promedio }}</span>
-                                <span class="text-red-500">❤️ {{ cafeteria.total_me_gusta }}</span>
-                            </div>
-                        </div>
-                        {% endif %}
-                    {% endfor %}
-                </div>
-            </div>
-            
-            <!-- Norte -->
-            <div class="mb-6 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
-                <h4 class="font-bold text-lg text-blue-700 mb-3">🏔️ ZONA NORTE</h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                    {% for cafeteria in cafeterias %}
-                        {% if cafeteria.zona == 'Norte' %}
-                        <div class="bg-white p-3 rounded-lg shadow-sm border hover:shadow-md transition-shadow cursor-pointer"
-                             onclick="window.open('/cafeteria/{{ cafeteria.id }}/', '_blank');">
-                            <div class="flex items-center mb-2">
-                                <span class="text-2xl mr-2">☕</span>
-                                <h5 class="font-semibold text-sm text-coffee-700">{{ cafeteria.nombre|truncatechars:20 }}</h5>
-                            </div>
-                            <p class="text-xs text-gray-600 mb-1">📍 {{ cafeteria.direccion|truncatechars:25 }}</p>
-                            <div class="flex items-center justify-between text-xs">
-                                <span class="text-yellow-600">⭐ {{ cafeteria.calificacion_promedio }}</span>
-                                <span class="text-red-500">❤️ {{ cafeteria.total_me_gusta }}</span>
-                            </div>
-                        </div>
-                        {% endif %}
-                    {% endfor %}
-                </div>
-            </div>
-            
-            <!-- Sur -->
-            <div class="mb-6 p-4 bg-green-50 rounded-lg border-l-4 border-green-500">
-                <h4 class="font-bold text-lg text-green-700 mb-3">🌳 ZONA SUR</h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                    {% for cafeteria in cafeterias %}
-                        {% if cafeteria.zona == 'Sur' %}
-                        <div class="bg-white p-3 rounded-lg shadow-sm border hover:shadow-md transition-shadow cursor-pointer"
-                             onclick="window.open('/cafeteria/{{ cafeteria.id }}/', '_blank');">
-                            <div class="flex items-center mb-2">
-                                <span class="text-2xl mr-2">☕</span>
-                                <h5 class="font-semibold text-sm text-coffee-700">{{ cafeteria.nombre|truncatechars:20 }}</h5>
-                            </div>
-                            <p class="text-xs text-gray-600 mb-1">📍 {{ cafeteria.direccion|truncatechars:25 }}</p>
-                            <div class="flex items-center justify-between text-xs">
-                                <span class="text-yellow-600">⭐ {{ cafeteria.calificacion_promedio }}</span>
-                                <span class="text-red-500">❤️ {{ cafeteria.total_me_gusta }}</span>
-                            </div>
-                        </div>
-                        {% endif %}
-                    {% endfor %}
-                </div>
-            </div>
-            
-            <!-- Este -->
-            <div class="mb-6 p-4 bg-yellow-50 rounded-lg border-l-4 border-yellow-500">
-                <h4 class="font-bold text-lg text-yellow-700 mb-3">🌅 ZONA ESTE</h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                    {% for cafeteria in cafeterias %}
-                        {% if cafeteria.zona == 'Este' %}
-                        <div class="bg-white p-3 rounded-lg shadow-sm border hover:shadow-md transition-shadow cursor-pointer"
-                             onclick="window.open('/cafeteria/{{ cafeteria.id }}/', '_blank');">
-                            <div class="flex items-center mb-2">
-                                <span class="text-2xl mr-2">☕</span>
-                                <h5 class="font-semibold text-sm text-coffee-700">{{ cafeteria.nombre|truncatechars:20 }}</h5>
-                            </div>
-                            <p class="text-xs text-gray-600 mb-1">📍 {{ cafeteria.direccion|truncatechars:25 }}</p>
-                            <div class="flex items-center justify-between text-xs">
-                                <span class="text-yellow-600">⭐ {{ cafeteria.calificacion_promedio }}</span>
-                                <span class="text-red-500">❤️ {{ cafeteria.total_me_gusta }}</span>
-                            </div>
-                        </div>
-                        {% endif %}
-                    {% endfor %}
+       
+        
+        <!-- Mapa Leaflet -->
+        <div id="mapa-cafeterias" class="w-full h-96 rounded-lg border border-gray-300 mb-6" style="min-height: 400px;">
+            <div class="flex items-center justify-center h-full bg-gray-50">
+                <div class="text-center">
+                    <i class="fas fa-spinner fa-spin text-4xl text-coffee-600 mb-4"></i>
+                    <p class="text-gray-600">Cargando mapa interactivo...</p>
+                    <p class="text-sm text-gray-500 mt-2">Se solicitará permiso para usar tu ubicación</p>
                 </div>
             </div>
         </div>
+        
+        <!-- Estadísticas del mapa -->
+       
+        
     </div>
 
     <!-- Recorridos Disponibles -->
@@ -247,23 +166,37 @@
     {% endif %}
 </div>
 
+<!-- Enlaces a Leaflet CSS y JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
+      crossorigin=""/>
+<!-- CSS personalizado para el mapa -->
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/mapa-cafeterias.css' %}">
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+
+<!-- Datos de cafeterías para JavaScript -->
+<script>
+    // Datos de cafeterías desde Django
+    const cafeteriasData = {{ cafeterias_json|safe }};
+    console.log('📊 Datos de cafeterías cargados:', cafeteriasData.length, 'cafeterías');
+</script>
+
+<!-- Script del mapa -->
+<script src="{% load static %}{% static 'js/mapa_cafeterias.js' %}"></script>
+
 <script>
     function scrollToMap() {
         document.getElementById('map-section').scrollIntoView({ behavior: 'smooth' });
     }
 
-    // Script simple para contar cafeterías por zona
+    // Script para compatibilidad
     document.addEventListener('DOMContentLoaded', function() {
         console.log('✅ Página de cafeterías cargada exitosamente');
-        
-        // Contar cafeterías por zona
-        const zonas = ['Centro', 'Norte', 'Sur', 'Este'];
-        zonas.forEach(zona => {
-            const cafeterias = document.querySelectorAll(`[data-zona="${zona}"]`).length;
-            console.log(`📍 ${zona}: ${cafeterias} cafeterías`);
-        });
-        
-        console.log('🗺️ Mapa visual instantáneo listo');
+        console.log(`🗺️ Mapa interactivo con ${cafeteriasData.length} cafeterías iniciado`);
     });
 </script>
 {% endblock %}

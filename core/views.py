@@ -9,6 +9,8 @@ from django.db.models import Avg, Count
 from django.conf import settings
 import json
 import math
+import random
+from datetime import datetime
 from .models import (
     Cafeteria, Recorrido, RecorridoUsuario, Comentario, 
     MeGusta, PerfilUsuario, TipoCafe
@@ -19,12 +21,55 @@ from .forms import RegistroForm, PerfilForm
 def home(request):
     """Vista principal que muestra el mapa y las cafeterías"""
     cafeterias = Cafeteria.objects.all()
-    recorridos = Recorrido.objects.filter(activo=True)
+    
+    # Obtener todos los recorridos activos
+    recorridos_disponibles = list(Recorrido.objects.filter(activo=True))
+    
+    # Seleccionar 2 recorridos aleatorios que cambien cada semana
+    # Usar el número de semana del año como semilla para mantener consistencia
+    semana_actual = datetime.now().isocalendar()[1]  # Número de semana del año
+    year_actual = datetime.now().year
+    semilla = semana_actual + year_actual * 100  # Semilla única por semana y año
+    
+    # Establecer la semilla para reproducibilidad semanal
+    random.seed(semilla)
+    
+    # Seleccionar hasta 2 recorridos aleatorios
+    recorridos = []
+    if len(recorridos_disponibles) >= 2:
+        recorridos = random.sample(recorridos_disponibles, 2)
+    elif len(recorridos_disponibles) == 1:
+        recorridos = recorridos_disponibles
+    # Si no hay recorridos, la lista queda vacía
+    
+    # Preparar datos de cafeterías para el mapa JavaScript
+    cafeterias_json = []
+    for cafeteria in cafeterias:
+        cafeterias_json.append({
+            'id': cafeteria.id,
+            'nombre': cafeteria.nombre,
+            'descripcion': cafeteria.descripcion,
+            'direccion': cafeteria.direccion,
+            'latitud': float(cafeteria.latitud),
+            'longitud': float(cafeteria.longitud),
+            'telefono': cafeteria.telefono,
+            'horario': cafeteria.horario,
+            'precio_promedio': float(cafeteria.precio_promedio),
+            'wifi': cafeteria.wifi,
+            'terraza': cafeteria.terraza,
+            'estacionamiento': cafeteria.estacionamiento,
+            'zona': cafeteria.zona,
+            'calificacion_promedio': float(cafeteria.calificacion_promedio),
+            'total_calificaciones': cafeteria.total_calificaciones,
+            'total_me_gusta': cafeteria.total_me_gusta,
+        })
     
     context = {
         'cafeterias': cafeterias,
         'recorridos': recorridos,
-        'MAPBOX_ACCESS_TOKEN': settings.MAPBOX_ACCESS_TOKEN,
+        'cafeterias_json': json.dumps(cafeterias_json),
+        'MAPBOX_ACCESS_TOKEN': getattr(settings, 'MAPBOX_ACCESS_TOKEN', ''),
+        'semana_actual': semana_actual,  # Para debug si es necesario
     }
     return render(request, 'core/home.html', context)
 

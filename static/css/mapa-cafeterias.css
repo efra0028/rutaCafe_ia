@@ -1,0 +1,476 @@
+/* Estilos personalizados para el mapa de cafeterías */
+
+/* Iconos personalizados del mapa */
+.custom-cafeteria-icon {
+    background: transparent !important;
+    border: none !important;
+}
+
+.user-location-icon {
+    background: transparent !important;
+    border: none !important;
+}
+
+/* Animación de pulso para ubicación del usuario */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.7;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Estilos para los popups del mapa */
+.leaflet-popup-content {
+    margin: 8px 12px !important;
+    line-height: 1.4;
+    font-size: 13px;
+}
+
+.leaflet-popup-content h3 {
+    margin-bottom: 8px !important;
+}
+
+/* Estilos para el control de capas personalizado */
+.leaflet-control-layers-custom {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-radius: 3px !important;
+    border: 1px solid rgba(0, 0, 0, 0.2) !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15) !important;
+    font-family: 'Roboto', 'Arial', sans-serif !important;
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+}
+
+.leaflet-control-layers-custom input[type="radio"] {
+    margin-right: 6px !important;
+    transform: scale(1) !important;
+    accent-color: #4285f4 !important;
+}
+
+.leaflet-control-layers-custom label {
+    margin: 0 !important;
+    font-weight: normal !important;
+    color: #333 !important;
+    user-select: none !important;
+    transition: background-color 0.2s ease !important;
+    padding: 3px 2px !important;
+    border-radius: 2px !important;
+}
+
+.leaflet-control-layers-custom label:hover {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Animación mejorada para ubicación actual */
+@keyframes pulse {
+    0% { 
+        transform: translate(-50%, -50%) scale(1); 
+        opacity: 1; 
+    }
+    70% { 
+        transform: translate(-50%, -50%) scale(3); 
+        opacity: 0; 
+    }
+    100% { 
+        transform: translate(-50%, -50%) scale(3); 
+        opacity: 0; 
+    }
+}
+
+/* Estilos para el control personalizado de ubicación */
+.leaflet-control-custom {
+    transition: all 0.2s ease !important;
+}
+
+.leaflet-control-custom:hover {
+    transform: scale(1.05) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Control de escala mejorado */
+.leaflet-control-scale {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border-radius: 4px !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    padding: 2px 6px !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+}
+
+/* Mejoras para los controles del mapa */
+.map-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.map-legend {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 14px;
+    color: #6B7280;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Loading spinner personalizado */
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+}
+
+/* Información de capas */
+.layer-info {
+    background: rgba(59, 130, 246, 0.1);
+    border-left: 4px solid #3b82f6;
+    padding: 8px 12px;
+    border-radius: 0 6px 6px 0;
+    margin: 8px 0;
+    font-size: 12px;
+    color: #1e40af;
+}
+
+/* Responsive para dispositivos móviles */
+@media (max-width: 768px) {
+    .map-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .map-legend {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    #mapa-cafeterias {
+        height: 300px !important;
+    }
+    
+    /* Control de capas más compacto en móvil */
+    .leaflet-control-layers {
+        max-width: 200px !important;
+    }
+    
+    .leaflet-control-layers-expanded {
+        padding: 8px !important;
+    }
+    
+    .leaflet-control-layers-base label {
+        font-size: 12px !important;
+    }
+}
+
+/* Colores de tema café */
+.coffee-theme {
+    --coffee-primary: #8B4513;
+    --coffee-secondary: #D2B48C;
+    --coffee-accent: #F5F5DC;
+}
+
+/* Botones de control del mapa */
+.map-control-button {
+    background: var(--coffee-primary);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.map-control-button:hover {
+    background: #A0522D;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.map-control-button:active {
+    transform: translateY(0);
+}
+
+/* Estadísticas del mapa */
+.map-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 16px;
+    text-align: center;
+}
+
+.stat-card {
+    padding: 16px;
+    border-radius: 8px;
+    border: 2px solid;
+    background: white;
+    transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card.coffee {
+    border-color: var(--coffee-primary);
+    background: #FFF8DC;
+}
+
+.stat-card.blue {
+    border-color: #3B82F6;
+    background: #EFF6FF;
+}
+
+.stat-card.green {
+    border-color: #10B981;
+    background: #ECFDF5;
+}
+
+.stat-card.yellow {
+    border-color: #F59E0B;
+    background: #FFFBEB;
+}
+
+/* === ESTILOS GOOGLE MAPS EXACTOS === */
+
+/* Control de capas exacto como Google Maps */
+.google-maps-layer-control {
+    background: #fff !important;
+    border: none !important;
+    border-radius: 2px !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,.3) !important;
+    overflow: visible !important;
+    min-width: 72px !important;
+    position: relative !important;
+}
+
+.google-layer-control {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+/* Botón principal "Capas" */
+.google-layer-main-button {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    border: none;
+    background: #fff;
+    cursor: pointer;
+    font-family: Roboto, Arial, sans-serif;
+    font-size: 14px;
+    color: #3c4043;
+    transition: background-color 0.2s ease;
+    min-height: 40px;
+    justify-content: center;
+}
+
+.google-layer-main-button:hover {
+    background-color: #f8f9fa;
+}
+
+/* Stack de iconos para el botón principal */
+.layer-icon-stack {
+    display: flex;
+    margin-right: 8px;
+    position: relative;
+    width: 20px;
+    height: 20px;
+}
+
+.layer-icon {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 1px solid #dadce0;
+    border-radius: 1px;
+}
+
+.roadmap-icon {
+    top: 0;
+    left: 0;
+    background: #fff;
+    background-image: 
+        linear-gradient(45deg, #f1f3f4 25%, transparent 25%), 
+        linear-gradient(-45deg, #f1f3f4 25%, transparent 25%);
+    background-size: 2px 2px;
+    z-index: 2;
+}
+
+.satellite-icon {
+    top: 4px;
+    left: 4px;
+    background: linear-gradient(135deg, #4285f4 0%, #34a853 50%, #fbbc04 100%);
+    z-index: 1;
+}
+
+.layer-main-label {
+    font-size: 14px;
+    line-height: 20px;
+    user-select: none;
+    white-space: nowrap;
+}
+
+/* Panel de opciones */
+.google-layer-options {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: none;
+    border-radius: 2px;
+    box-shadow: 0 2px 6px rgba(0,0,0,.3);
+    z-index: 1000;
+    margin-top: 8px;
+}
+
+/* Opciones individuales */
+.google-layer-option {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    border: none;
+    background: #fff;
+    cursor: pointer;
+    font-family: Roboto, Arial, sans-serif;
+    font-size: 14px;
+    color: #3c4043;
+    transition: background-color 0.2s ease;
+    min-height: 40px;
+    border-bottom: 1px solid #e8eaed;
+    width: 100%;
+    justify-content: flex-start;
+}
+
+.google-layer-option:last-child {
+    border-bottom: none;
+}
+
+.google-layer-option:hover:not(.active) {
+    background-color: #f8f9fa;
+}
+
+.google-layer-option.active {
+    background-color: #e8f0fe;
+    color: #1a73e8;
+    font-weight: 500;
+}
+
+.layer-preview {
+    width: 24px;
+    height: 24px;
+    border: 1px solid #dadce0;
+    border-radius: 2px;
+    margin-right: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.roadmap-preview {
+    background: #fff;
+    background-image: 
+        linear-gradient(45deg, #f1f3f4 25%, transparent 25%), 
+        linear-gradient(-45deg, #f1f3f4 25%, transparent 25%), 
+        linear-gradient(45deg, transparent 75%, #f1f3f4 75%), 
+        linear-gradient(-45deg, transparent 75%, #f1f3f4 75%);
+    background-size: 3px 3px;
+}
+
+.satellite-preview {
+    background: linear-gradient(135deg, #4285f4 0%, #34a853 25%, #fbbc04 50%, #ea4335 75%, #9c27b0 100%);
+}
+
+.sat-text {
+    font-size: 7px;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.5);
+    letter-spacing: 0.2px;
+}
+
+.layer-label {
+    font-size: 14px;
+    line-height: 20px;
+    user-select: none;
+    white-space: nowrap;
+}
+
+/* Icono de ubicación actual estilo Google Maps */
+.user-location-icon-google {
+    background: transparent !important;
+    border: none !important;
+}
+
+.location-marker {
+    position: relative;
+    width: 25px;
+    height: 25px;
+}
+
+.location-pulse {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 25px;
+    height: 25px;
+    background-color: rgba(26, 115, 232, 0.2);
+    border-radius: 50%;
+    animation: googlePulse 1.5s infinite;
+}
+
+.location-dot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 15px;
+    height: 15px;
+    background-color: #1a73e8;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(60,64,67,.3);
+    z-index: 1;
+}
+
+@keyframes googlePulse {
+    0% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+    70% {
+        transform: translate(-50%, -50%) scale(3);
+        opacity: 0;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(3);
+        opacity: 0;
+    }
+}
