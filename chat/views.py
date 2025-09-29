@@ -10,6 +10,60 @@ from .models import Conversacion, Mensaje, PreferenciaUsuario
 from core.models import Cafeteria, TipoCafe, Recorrido
 from core.voice_service import voice_service
 import random
+import re
+
+
+def limpiar_texto_para_voz(texto):
+    """
+    Elimina emojis, símbolos especiales y caracteres que no deben ser leídos en voz alta.
+    Mantiene solo texto legible para text-to-speech.
+    """
+    if not texto:
+        return texto
+    
+    # Eliminar emojis usando regex
+    # Patrón que cubre la mayoría de emojis Unicode
+    emoji_pattern = re.compile(
+        "["
+        "\U0001F600-\U0001F64F"  # emoticons
+        "\U0001F300-\U0001F5FF"  # símbolos & pictogramas
+        "\U0001F680-\U0001F6FF"  # transporte & símbolos de mapa
+        "\U0001F1E0-\U0001F1FF"  # banderas (iOS)
+        "\U00002702-\U000027B0"  # dingbats
+        "\U000024C2-\U0001F251"  # caracteres encerrados
+        "\U0001F900-\U0001F9FF"  # símbolos suplementarios
+        "\U0001FA00-\U0001FA6F"  # símbolos extendidos-A
+        "\U0001FA70-\U0001FAFF"  # símbolos extendidos-B
+        "\U00002600-\U000026FF"  # símbolos misceláneos
+        "\U00002700-\U000027BF"  # dingbats
+        "]+",
+        flags=re.UNICODE
+    )
+    
+    # Eliminar emojis
+    texto_limpio = emoji_pattern.sub('', texto)
+    
+    # Eliminar símbolos especiales comunes que se leen mal
+    texto_limpio = texto_limpio.replace('→', ' ')
+    texto_limpio = texto_limpio.replace('•', ' ')
+    texto_limpio = texto_limpio.replace('✓', ' ')
+    texto_limpio = texto_limpio.replace('✔', ' ')
+    texto_limpio = texto_limpio.replace('✅', ' ')
+    texto_limpio = texto_limpio.replace('❌', ' ')
+    texto_limpio = texto_limpio.replace('⭐', ' ')
+    texto_limpio = texto_limpio.replace('★', ' ')
+    texto_limpio = texto_limpio.replace('►', ' ')
+    texto_limpio = texto_limpio.replace('▶', ' ')
+    texto_limpio = texto_limpio.replace('◄', ' ')
+    texto_limpio = texto_limpio.replace('◀', ' ')
+    
+    # Limpiar múltiples espacios
+    texto_limpio = re.sub(r'\s+', ' ', texto_limpio)
+    
+    # Limpiar espacios al inicio y final
+    texto_limpio = texto_limpio.strip()
+    
+    return texto_limpio
 
 
 def get_openai_response(user_message, conversacion):
@@ -922,8 +976,14 @@ def generar_audio(request):
         if not text:
             return JsonResponse({'error': 'Texto vacío'}, status=400)
         
-        # Generar audio con Amazon Polly
-        audio_base64 = voice_service.text_to_speech(text, voice_id)
+        # Limpiar texto de emojis y símbolos antes de generar audio
+        texto_limpio = limpiar_texto_para_voz(text)
+        
+        if not texto_limpio:
+            return JsonResponse({'error': 'Texto no contiene contenido legible'}, status=400)
+        
+        # Generar audio con Amazon Polly usando texto limpio
+        audio_base64 = voice_service.text_to_speech(texto_limpio, voice_id)
         
         if audio_base64:
                 return JsonResponse({

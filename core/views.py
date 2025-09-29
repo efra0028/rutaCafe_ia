@@ -687,8 +687,17 @@ def editar_producto(request, producto_id):
                 producto.nombre = nombre
                 producto.descripcion = descripcion
                 producto.precio = float(precio)
+                
+                # Manejar actualización de imagen
                 if imagen:
+                    # Eliminar la imagen anterior si existe
+                    if producto.imagen:
+                        import os
+                        if os.path.isfile(producto.imagen.path):
+                            os.remove(producto.imagen.path)
+                    # Asignar la nueva imagen
                     producto.imagen = imagen
+                
                 producto.save()
                 
                 messages.success(request, f'Producto "{nombre}" actualizado exitosamente.')
@@ -699,7 +708,6 @@ def editar_producto(request, producto_id):
             messages.error(request, 'Todos los campos son obligatorios.')
     
     context = {
-        'dueno': dueno,
         'cafeteria': cafeteria,
         'producto': producto,
     }
@@ -744,7 +752,12 @@ def editar_cafeteria(request):
         descripcion = request.POST.get('descripcion')
         direccion = request.POST.get('direccion')
         telefono = request.POST.get('telefono')
-        horario = request.POST.get('horario')
+        latitud = request.POST.get('latitud')
+        longitud = request.POST.get('longitud')
+        wifi = request.POST.get('wifi') == 'on'
+        terraza = request.POST.get('terraza') == 'on'
+        estacionamiento = request.POST.get('estacionamiento') == 'on'
+        zona = request.POST.get('zona')
         imagen = request.FILES.get('imagen')
         
         if nombre and descripcion and direccion:
@@ -756,21 +769,70 @@ def editar_cafeteria(request):
                     'cafeteria': cafeteria,
                 })
             
+            # Actualizar información básica
             cafeteria.nombre = nombre
             cafeteria.descripcion = descripcion
             cafeteria.direccion = direccion
             cafeteria.telefono = telefono or ''
-            cafeteria.horario = horario or 'L-D: 8:00-20:00'
+            cafeteria.wifi = wifi
+            cafeteria.terraza = terraza
+            cafeteria.estacionamiento = estacionamiento
+            cafeteria.zona = zona or 'Centro'
+            
+            # Actualizar coordenadas si se proporcionan
+            if latitud and longitud:
+                try:
+                    cafeteria.latitud = float(latitud)
+                    cafeteria.longitud = float(longitud)
+                    dueno.latitud = float(latitud)
+                    dueno.longitud = float(longitud)
+                except ValueError:
+                    messages.error(request, 'Las coordenadas deben ser números válidos.')
+                    return render(request, 'dueno/editar_cafeteria.html', {
+                        'dueno': dueno,
+                        'cafeteria': cafeteria,
+                    })
+            
+            # Manejar actualización de imagen
             if imagen:
+                # Eliminar la imagen anterior si existe
+                if cafeteria.imagen:
+                    import os
+                    if os.path.isfile(cafeteria.imagen.path):
+                        os.remove(cafeteria.imagen.path)
+                # Asignar la nueva imagen
                 cafeteria.imagen = imagen
+            
             cafeteria.save()
+            
+            # Actualizar horarios detallados por día
+            from .models import HorarioCafeteria
+            for dia in range(7):  # 0=Lunes, 6=Domingo
+                cerrado = request.POST.get(f'cerrado_{dia}') == 'on'
+                hora_apertura = request.POST.get(f'hora_apertura_{dia}')
+                hora_cierre = request.POST.get(f'hora_cierre_{dia}')
+                
+                # Obtener o crear el horario para este día
+                horario, created = HorarioCafeteria.objects.get_or_create(
+                    cafeteria=cafeteria,
+                    dia_semana=dia
+                )
+                
+                horario.cerrado = cerrado
+                if not cerrado and hora_apertura and hora_cierre:
+                    horario.hora_apertura = hora_apertura
+                    horario.hora_cierre = hora_cierre
+                elif cerrado:
+                    horario.hora_apertura = None
+                    horario.hora_cierre = None
+                
+                horario.save()
             
             # También actualizar en el perfil del dueño
             dueno.nombre_cafeteria = nombre
             dueno.descripcion_cafeteria = descripcion
             dueno.direccion_cafeteria = direccion
             dueno.telefono_cafeteria = telefono or ''
-            dueno.horario_atencion = horario or 'L-D: 8:00-20:00'
             dueno.save()
             
             messages.success(request, 'Información de la cafetería actualizada exitosamente.')
@@ -778,9 +840,29 @@ def editar_cafeteria(request):
         else:
             messages.error(request, 'Los campos nombre, descripción y dirección son obligatorios.')
     
+    # Obtener horarios existentes
+    from .models import HorarioCafeteria
+    horarios_dict = {}
+    for horario in HorarioCafeteria.objects.filter(cafeteria=cafeteria):
+        horarios_dict[horario.dia_semana] = horario
+    
+    # Lista de días de la semana
+    dias_semana = [
+        (0, 'Lunes'),
+        (1, 'Martes'),
+        (2, 'Miércoles'),
+        (3, 'Jueves'),
+        (4, 'Viernes'),
+        (5, 'Sábado'),
+        (6, 'Domingo'),
+    ]
+    
     context = {
         'dueno': dueno,
         'cafeteria': cafeteria,
+        'horarios_dict': horarios_dict,
+        'dias_semana': dias_semana,
+        'MAPBOX_ACCESS_TOKEN': getattr(settings, 'MAPBOX_ACCESS_TOKEN', ''),
     }
     
     return render(request, 'dueno/editar_cafeteria.html', context)

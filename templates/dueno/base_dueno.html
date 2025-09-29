@@ -76,7 +76,6 @@
                         <i class="fas fa-tachometer-alt mr-3"></i>
                         Dashboard
                     </a>
-                    
                     <a href="{% url 'gestionar_productos' %}" class="sidebar-link flex items-center px-4 py-3 text-gray-700 rounded-lg transition duration-200 {% if 'productos' in request.resolver_match.url_name %}active{% endif %}">
                         <i class="fas fa-coffee mr-3"></i>
                         Productos
@@ -87,10 +86,13 @@
                         Mi Cafetería
                     </a>
                     
+                    <!-- Ver Sitio Público - Comentado temporalmente -->
+                    <!--
                     <a href="{% url 'home' %}" class="sidebar-link flex items-center px-4 py-3 text-gray-700 rounded-lg transition duration-200">
                         <i class="fas fa-eye mr-3"></i>
                         Ver Sitio Público
                     </a>
+                    -->
                 </div>
             </div>
         </nav>

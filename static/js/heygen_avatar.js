@@ -4,6 +4,38 @@ let avatarSessionId = null;
 let isAvatarSpeaking = false;
 let avatarConnected = false;
 
+// Función para limpiar emojis y símbolos del texto
+function limpiarTextoParaVoz(texto) {
+    if (!texto) return texto;
+    
+    // Eliminar emojis usando regex
+    const emojiPattern = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2702}-\u{27B0}\u{24C2}-\u{1F251}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu;
+    
+    let textoLimpio = texto.replace(emojiPattern, '');
+    
+    // Eliminar símbolos especiales comunes
+    textoLimpio = textoLimpio.replace(/→/g, ' ');
+    textoLimpio = textoLimpio.replace(/•/g, ' ');
+    textoLimpio = textoLimpio.replace(/✓/g, ' ');
+    textoLimpio = textoLimpio.replace(/✔/g, ' ');
+    textoLimpio = textoLimpio.replace(/✅/g, ' ');
+    textoLimpio = textoLimpio.replace(/❌/g, ' ');
+    textoLimpio = textoLimpio.replace(/⭐/g, ' ');
+    textoLimpio = textoLimpio.replace(/★/g, ' ');
+    textoLimpio = textoLimpio.replace(/►/g, ' ');
+    textoLimpio = textoLimpio.replace(/▶/g, ' ');
+    textoLimpio = textoLimpio.replace(/◄/g, ' ');
+    textoLimpio = textoLimpio.replace(/◀/g, ' ');
+    
+    // Limpiar múltiples espacios
+    textoLimpio = textoLimpio.replace(/\s+/g, ' ');
+    
+    // Limpiar espacios al inicio y final
+    textoLimpio = textoLimpio.trim();
+    
+    return textoLimpio;
+}
+
 // Inicializar avatar HeyGen
 async function initHeyGenAvatar() {
     console.log('🎭 Inicializando avatar HeyGen...');
@@ -83,8 +115,16 @@ async function speakWithHeyGen(text) {
         return false;
     }
     
+    // Limpiar texto de emojis y símbolos antes de enviar
+    const textoLimpio = limpiarTextoParaVoz(text);
+    
+    if (!textoLimpio) {
+        console.warn('⚠️ Texto no contiene contenido legible después de limpiar');
+        return false;
+    }
+    
     try {
-        console.log('🗣️ Enviando texto al avatar:', text.substring(0, 50));
+        console.log('🗣️ Enviando texto limpio al avatar:', textoLimpio.substring(0, 50));
         
         const response = await fetch('/chat/avatar/enviar-texto/', {
             method: 'POST',
@@ -94,7 +134,7 @@ async function speakWithHeyGen(text) {
             },
             body: JSON.stringify({
                 session_id: avatarSessionId,
-                text: text
+                text: textoLimpio
             })
         });
         
@@ -199,11 +239,21 @@ function speakWithBrowser(text) {
         return;
     }
     
+    // Limpiar texto de emojis y símbolos antes de hablar
+    const textoLimpio = limpiarTextoParaVoz(text);
+    
+    if (!textoLimpio) {
+        console.warn('⚠️ Texto no contiene contenido legible después de limpiar');
+        return;
+    }
+    
+    console.log('🧹 Texto limpio para voz:', textoLimpio.substring(0, 50) + '...');
+    
     // Cancelar cualquier síntesis anterior
     speechSynthesis.cancel();
     
-    // Crear utterance
-    const utterance = new SpeechSynthesisUtterance(text);
+    // Crear utterance con texto limpio
+    const utterance = new SpeechSynthesisUtterance(textoLimpio);
     
     // Configurar voz en español
     const voices = speechSynthesis.getVoices();

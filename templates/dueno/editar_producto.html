@@ -50,13 +50,13 @@
                          class="h-32 w-32 object-cover rounded-lg border">
                 </div>
                 {% endif %}
+                <input id="imagen" name="imagen" type="file" class="hidden" accept="image/*,.webp,.avif,.heic,.svg">
                 <div id="drop-area" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-coffee-500 transition duration-200 cursor-pointer bg-white">
                     <div class="space-y-1 text-center" id="drop-content">
                         <i class="fas fa-cloud-upload-alt text-3xl text-gray-400"></i>
                         <div class="flex text-sm text-gray-600">
-                            <label for="imagen" class="relative cursor-pointer bg-white rounded-md font-medium text-coffee-600 hover:text-coffee-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-coffee-500">
+                            <label for="imagen" class="relative cursor-pointer bg-white rounded-md font-medium text-coffee-600 hover:text-coffee-500">
                                 <span>{% if producto.imagen %}Cambiar imagen{% else %}Subir una imagen{% endif %}</span>
-                                <input id="imagen" name="imagen" type="file" class="sr-only" accept="image/*,.webp,.avif,.heic,.svg">
                             </label>
                             <p class="pl-1">o arrastra y suelta</p>
                         </div>
@@ -102,6 +102,7 @@ dropArea.addEventListener('drop', e => {
         mostrarPreview(files[0]);
     }
 });
+dropArea.addEventListener('click', () => inputImagen.click());
 inputImagen.addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (file) mostrarPreview(file);
@@ -109,7 +110,7 @@ inputImagen.addEventListener('change', function(e) {
 function mostrarPreview(file) {
     const reader = new FileReader();
     reader.onload = function(e) {
-        dropArea.innerHTML = '<div class="text-center"><img src="' + e.target.result + '" class="h-32 w-32 object-cover rounded-lg mx-auto mb-2"><p class="text-sm text-gray-600">Nueva imagen seleccionada</p></div>';
+        dropContent.innerHTML = '<i class="fas fa-check-circle text-3xl text-green-500"></i><div class="mt-2"><img src="' + e.target.result + '" class="h-32 w-32 object-cover rounded-lg mx-auto mb-2"><p class="text-sm text-gray-600">Nueva imagen seleccionada: <strong>' + file.name + '</strong></p></div>';
     };
     reader.readAsDataURL(file);
 }
