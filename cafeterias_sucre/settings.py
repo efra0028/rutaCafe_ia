@@ -50,6 +50,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'core.middleware.DuenoRedirectMiddleware',  # Middleware personalizado
 ]
 
 ROOT_URLCONF = 'cafeterias_sucre.urls'
@@ -126,6 +127,16 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# File upload settings
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+
+# Allowed image formats
+ALLOWED_IMAGE_EXTENSIONS = [
+    'jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'tif',
+    'webp', 'avif', 'svg', 'ico', 'heic', 'heif'
+]
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -141,3 +152,8 @@ AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', default='')
 AWS_REGION = config('AWS_REGION', default='us-east-1')
 POLLY_VOICE_ID = config('POLLY_VOICE_ID', default='Lupe')  # Voz femenina en español
 USAR_POLLY_PARA_AUDIO = config('USAR_POLLY_PARA_AUDIO', default=True, cast=bool)
+
+# Email Configuration
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Para desarrollo
+DEFAULT_FROM_EMAIL = 'RutaCafé <admin@rutacafe.com>'
+EMAIL_HOST_USER = DEFAULT_FROM_EMAIL

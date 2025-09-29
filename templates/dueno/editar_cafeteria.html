@@ -1,0 +1,189 @@
+{% extends 'dueno/base_dueno.html' %}
+
+{% block title %}Editar Cafetería - {{ cafeteria.nombre }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">Editar Información de la Cafetería</h2>
+            <p class="text-gray-600">Actualiza los datos de tu cafetería</p>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+            
+            <!-- Información básica -->
+            <div class="border-b border-gray-200 pb-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Información Básica</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="md:col-span-2">
+                        <label for="nombre" class="block text-sm font-medium text-gray-700 mb-2">
+                            Nombre de la Cafetería *
+                        </label>
+                        <input type="text" id="nombre" name="nombre" required 
+                               value="{{ cafeteria.nombre }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500 focus:border-coffee-500">
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label for="descripcion" class="block text-sm font-medium text-gray-700 mb-2">
+                            Descripción *
+                        </label>
+                        <textarea id="descripcion" name="descripcion" required rows="4"
+                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500 focus:border-coffee-500">{{ cafeteria.descripcion }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contacto y ubicación -->
+            <div class="border-b border-gray-200 pb-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Contacto y Ubicación</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="md:col-span-2">
+                        <label for="direccion" class="block text-sm font-medium text-gray-700 mb-2">
+                            Dirección *
+                        </label>
+                        <input type="text" id="direccion" name="direccion" required 
+                               value="{{ cafeteria.direccion }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500 focus:border-coffee-500">
+                    </div>
+                    
+                    <div>
+                        <label for="telefono" class="block text-sm font-medium text-gray-700 mb-2">
+                            Teléfono
+                        </label>
+                        <input type="text" id="telefono" name="telefono" 
+                               value="{{ cafeteria.telefono|default:'' }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500 focus:border-coffee-500"
+                               placeholder="70000000">
+                    </div>
+                    
+                    <div>
+                        <label for="horario" class="block text-sm font-medium text-gray-700 mb-2">
+                            Horario de Atención
+                        </label>
+                        <input type="text" id="horario" name="horario" 
+                               value="{{ cafeteria.horario }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500 focus:border-coffee-500"
+                               placeholder="L-D: 8:00-20:00">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Imagen -->
+            <div>
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Imagen de la Cafetería</h3>
+                
+                {% if cafeteria.imagen %}
+                <div class="mb-4">
+                    <p class="text-sm text-gray-600 mb-2">Imagen actual:</p>
+                    <img src="{{ cafeteria.imagen.url }}" alt="{{ cafeteria.nombre }}" 
+                         class="h-48 w-full object-cover rounded-lg border max-w-md">
+                </div>
+                {% endif %}
+                <div id="drop-area" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-coffee-500 transition duration-200 cursor-pointer bg-white">
+                    <div class="space-y-1 text-center" id="drop-content">
+                        <i class="fas fa-cloud-upload-alt text-3xl text-gray-400"></i>
+                        <div class="flex text-sm text-gray-600">
+                            <label for="imagen" class="relative cursor-pointer bg-white rounded-md font-medium text-coffee-600 hover:text-coffee-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-coffee-500">
+                                <span>{% if cafeteria.imagen %}Cambiar imagen{% else %}Subir imagen{% endif %}</span>
+                                <input id="imagen" name="imagen" type="file" class="sr-only" accept="image/*,.webp,.avif,.heic,.svg">
+                            </label>
+                            <p class="pl-1">o arrastra y suelta</p>
+                        </div>
+                        <p class="text-xs text-gray-500">PNG, JPG, JPEG, WebP, AVIF, SVG hasta 10MB</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Características -->
+            <div>
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Características</h3>
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="wifi" name="wifi" {% if cafeteria.wifi %}checked{% endif %}
+                                   class="h-4 w-4 text-coffee-600 focus:ring-coffee-500 border-gray-300 rounded">
+                            <label for="wifi" class="ml-2 text-sm text-gray-700">
+                                <i class="fas fa-wifi mr-1"></i>WiFi Gratuito
+                            </label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="terraza" name="terraza" {% if cafeteria.terraza %}checked{% endif %}
+                                   class="h-4 w-4 text-coffee-600 focus:ring-coffee-500 border-gray-300 rounded">
+                            <label for="terraza" class="ml-2 text-sm text-gray-700">
+                                <i class="fas fa-umbrella-beach mr-1"></i>Terraza
+                            </label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="estacionamiento" name="estacionamiento" {% if cafeteria.estacionamiento %}checked{% endif %}
+                                   class="h-4 w-4 text-coffee-600 focus:ring-coffee-500 border-gray-300 rounded">
+                            <label for="estacionamiento" class="ml-2 text-sm text-gray-700">
+                                <i class="fas fa-parking mr-1"></i>Estacionamiento
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div class="flex">
+                    <i class="fas fa-info-circle text-yellow-600 mt-1 mr-2"></i>
+                    <div class="text-sm text-yellow-800">
+                        <p class="font-medium mb-1">Nota importante:</p>
+                        <p>Los cambios en la ubicación (coordenadas) deben ser actualizados por un administrador. Si necesitas cambiar la ubicación en el mapa, contacta al soporte.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between pt-6">
+                <a href="{% url 'panel_dueno' %}" 
+                   class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-arrow-left mr-2"></i>Cancelar
+                </a>
+                <button type="submit" 
+                        class="px-8 py-3 bg-coffee-600 text-white rounded-lg hover:bg-coffee-700 transition duration-200">
+                    <i class="fas fa-save mr-2"></i>Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Drag & Drop funcional
+const dropArea = document.getElementById('drop-area');
+const inputImagen = document.getElementById('imagen');
+const dropContent = document.getElementById('drop-content');
+
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dropArea.addEventListener(eventName, e => e.preventDefault());
+    dropArea.addEventListener(eventName, e => e.stopPropagation());
+});
+['dragenter', 'dragover'].forEach(eventName => {
+    dropArea.classList.add('border-coffee-500', 'bg-coffee-50');
+});
+['dragleave', 'drop'].forEach(eventName => {
+    dropArea.classList.remove('border-coffee-500', 'bg-coffee-50');
+});
+dropArea.addEventListener('drop', e => {
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        inputImagen.files = files;
+        mostrarPreview(files[0]);
+    }
+});
+inputImagen.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) mostrarPreview(file);
+});
+function mostrarPreview(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        dropArea.innerHTML = '<div class="text-center"><img src="' + e.target.result + '" class="h-48 w-full object-cover rounded-lg mx-auto mb-2 max-w-md"><p class="text-sm text-gray-600">Nueva imagen seleccionada</p></div>';
+    };
+    reader.readAsDataURL(file);
+}
+</script>
+{% endblock %}

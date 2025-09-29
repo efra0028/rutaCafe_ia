@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, authenticate
+from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
@@ -10,12 +11,42 @@ from django.conf import settings
 import json
 import math
 import random
+import mimetypes
 from datetime import datetime
 from .models import (
     Cafeteria, Recorrido, RecorridoUsuario, Comentario, 
-    MeGusta, PerfilUsuario, TipoCafe
+    MeGusta, PerfilUsuario, TipoCafe, Producto, DuenoCafeteria
 )
-from .forms import RegistroForm, PerfilForm
+from .forms import RegistroForm, PerfilForm, LoginForm, DuenoCafeteriaForm
+
+
+def validar_imagen(archivo):
+    """Valida que el archivo sea una imagen válida"""
+    if not archivo:
+        return True  # Permitir archivos vacíos (opcional)
+    
+    # Obtener extensión del archivo
+    nombre = archivo.name.lower()
+    extensiones_permitidas = getattr(settings, 'ALLOWED_IMAGE_EXTENSIONS', [
+        'jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'tif',
+        'webp', 'avif', 'svg', 'ico', 'heic', 'heif'
+    ])
+    
+    # Validar extensión
+    extension = nombre.split('.')[-1] if '.' in nombre else ''
+    if extension not in extensiones_permitidas:
+        return False
+    
+    # Validar tipo MIME
+    tipo_mime, _ = mimetypes.guess_type(nombre)
+    if tipo_mime and not tipo_mime.startswith('image/'):
+        return False
+    
+    # Validar tamaño (10MB máximo)
+    if archivo.size > 10 * 1024 * 1024:
+        return False
+    
+    return True
 
 
 def home(request):
@@ -138,6 +169,11 @@ def cafeteria_detail(request, cafeteria_id):
     """Vista detalle de una cafetería"""
     cafeteria = get_object_or_404(Cafeteria, id=cafeteria_id)
     comentarios = Comentario.objects.filter(cafeteria=cafeteria).order_by('-fecha_creacion')
+    productos = Producto.objects.filter(cafeteria=cafeteria, disponible=True)[:6]
+    
+    # Obtener horarios detallados
+    horarios_detallados = cafeteria.get_horarios_detallados()
+    horario_hoy = cafeteria.get_horario_hoy()
     
     # Verificar si el usuario ya le dio me gusta
     me_gusta = False
@@ -150,7 +186,10 @@ def cafeteria_detail(request, cafeteria_id):
     context = {
         'cafeteria': cafeteria,
         'comentarios': comentarios,
+        'productos': productos,
         'me_gusta': me_gusta,
+        'horarios_detallados': horarios_detallados,
+        'horario_hoy': horario_hoy,
         'MAPBOX_ACCESS_TOKEN': settings.MAPBOX_ACCESS_TOKEN,
     }
     return render(request, 'core/cafeteria_detail.html', context)
@@ -250,10 +289,33 @@ def iniciar_recorrido(request, recorrido_id):
 def recorrido_detail(request, recorrido_id):
     """Detalle de un recorrido del usuario"""
     recorrido_usuario = get_object_or_404(RecorridoUsuario, id=recorrido_id, usuario=request.user)
-    
+    cafeterias_qs = recorrido_usuario.recorrido.cafeterias.all().order_by('recorridocafeteria__orden')
+    visitadas_ids = set(recorrido_usuario.cafeterias_visitadas.values_list('id', flat=True))
+
+    cafeterias_data = []
+    for cafe in cafeterias_qs:
+        try:
+            lat = float(cafe.latitud)
+            lng = float(cafe.longitud)
+        except (TypeError, ValueError):
+            continue
+
+        cafeterias_data.append({
+            'id': cafe.id,
+            'nombre': cafe.nombre,
+            'direccion': cafe.direccion,
+            'lat': lat,
+            'lng': lng,
+            'visitada': cafe.id in visitadas_ids,
+        })
+
     context = {
         'recorrido_usuario': recorrido_usuario,
-        'cafeterias': recorrido_usuario.recorrido.cafeterias.all().order_by('recorridocafeteria__orden'),
+        'cafeterias': cafeterias_qs,
+        'cafeterias_data': cafeterias_data,
+        'total_cafeterias': cafeterias_qs.count(),
+        'cafeterias_visitadas': recorrido_usuario.cafeterias_visitadas.count(),
+        'cafeterias_restantes': cafeterias_qs.count() - recorrido_usuario.cafeterias_visitadas.count(),
         'MAPBOX_ACCESS_TOKEN': settings.MAPBOX_ACCESS_TOKEN,
     }
     return render(request, 'core/recorrido_detail.html', context)
@@ -389,3 +451,336 @@ def estadisticas(request):
         'top_cafeterias': top_cafeterias,
     }
     return render(request, 'core/estadisticas.html', context)
+
+
+def user_login(request):
+    """Vista para iniciar sesión del usuario"""
+    if request.user.is_authenticated:
+        return redirect('home')
+    
+    if request.method == 'POST':
+        form = LoginForm(data=request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(username=username, password=password)
+            if user is not None:
+                login(request, user)
+                messages.success(request, f'¡Bienvenido {user.first_name or user.username}!')
+                
+                # Redirigir según el tipo de usuario
+                if user.is_superuser:
+                    return redirect('/admin/')
+                elif hasattr(user, 'duenocafeteria') and user.duenocafeteria.esta_aprobado:
+                    return redirect('panel_dueno')
+                else:
+                    return redirect('home')
+            else:
+                messages.error(request, 'Nombre de usuario o contraseña incorrectos.')
+    else:
+        form = LoginForm()
+    
+    return render(request, 'core/login.html', {'form': form})
+
+
+def user_logout(request):
+    """Vista para cerrar sesión del usuario"""
+    logout(request)
+    return redirect('home')
+
+
+def registro_dueno(request):
+    """Vista para registro de dueños de cafeterías"""
+    if request.method == 'POST':
+        form = DuenoCafeteriaForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            messages.success(
+                request, 
+                f'¡Registro enviado exitosamente! Tu solicitud ha sido enviada al administrador para revisión. '
+                f'Recibirás un email de confirmación cuando sea aprobada.'
+            )
+            
+            # Enviar notificación al administrador
+            from django.core.mail import send_mail
+            from django.conf import settings
+            
+            try:
+                # Obtener todos los administradores
+                admins = User.objects.filter(is_superuser=True)
+                admin_emails = [admin.email for admin in admins if admin.email]
+                
+                if admin_emails:
+                    send_mail(
+                        subject='Nueva solicitud de registro de cafetería - RutaCafé',
+                        message=f'''
+Una nueva cafetería solicita registrarse en RutaCafé:
+
+Dueño: {user.get_full_name()}
+Email: {user.email}
+Cafetería: {form.cleaned_data['nombre_cafeteria']}
+Ubicación: {form.cleaned_data['direccion_cafeteria']}
+
+Por favor, revisa la solicitud en el panel de administración.
+                        ''',
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=admin_emails,
+                        fail_silently=True,
+                    )
+            except Exception as e:
+                print(f"Error enviando email: {e}")
+            
+            return redirect('home')
+    else:
+        form = DuenoCafeteriaForm()
+    
+    return render(request, 'core/registro_dueno.html', {'form': form})
+
+
+# ==================== VISTAS PARA DUEÑOS DE CAFETERÍAS ====================
+
+def es_dueno_cafeteria(user):
+    """Verificar si el usuario es dueño de una cafetería aprobada"""
+    return (hasattr(user, 'duenocafeteria') and 
+            user.duenocafeteria.esta_aprobado and 
+            user.duenocafeteria.cafeteria is not None)
+
+
+@login_required
+def panel_dueno(request):
+    """Panel principal para dueños de cafeterías"""
+    if not es_dueno_cafeteria(request.user):
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('home')
+    
+    dueno = request.user.duenocafeteria
+    cafeteria = dueno.cafeteria
+    
+    # Estadísticas de la cafetería
+    total_productos = cafeteria.productos.count()
+    total_comentarios = cafeteria.comentario_set.count()
+    total_me_gusta = cafeteria.megusta_set.count()
+    calificacion_promedio = cafeteria.calificacion_promedio
+    
+    # Comentarios recientes
+    comentarios_recientes = cafeteria.comentario_set.order_by('-fecha_creacion')[:5]
+    
+    # Productos sin imagen
+    productos_sin_imagen = cafeteria.productos.filter(imagen__isnull=True).count()
+    
+    context = {
+        'dueno': dueno,
+        'cafeteria': cafeteria,
+        'total_productos': total_productos,
+        'total_comentarios': total_comentarios,
+        'total_me_gusta': total_me_gusta,
+        'calificacion_promedio': calificacion_promedio,
+        'comentarios_recientes': comentarios_recientes,
+        'productos_sin_imagen': productos_sin_imagen,
+    }
+    
+    return render(request, 'dueno/panel.html', context)
+
+
+@login_required
+def gestionar_productos(request):
+    """Vista para gestionar productos de la cafetería"""
+    if not es_dueno_cafeteria(request.user):
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('home')
+    
+    dueno = request.user.duenocafeteria
+    cafeteria = dueno.cafeteria
+    productos = cafeteria.productos.all().order_by('nombre')
+    
+    context = {
+        'dueno': dueno,
+        'cafeteria': cafeteria,
+        'productos': productos,
+    }
+    
+    return render(request, 'dueno/productos.html', context)
+
+
+@login_required
+def agregar_producto(request):
+    """Vista para agregar un nuevo producto"""
+    if not es_dueno_cafeteria(request.user):
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('home')
+    
+    dueno = request.user.duenocafeteria
+    cafeteria = dueno.cafeteria
+    
+    if request.method == 'POST':
+        nombre = request.POST.get('nombre')
+        descripcion = request.POST.get('descripcion')
+        precio = request.POST.get('precio')
+        imagen = request.FILES.get('imagen')
+        
+        if nombre and descripcion and precio:
+            # Validar imagen si se proporciona
+            if imagen and not validar_imagen(imagen):
+                messages.error(request, 'Formato de imagen no válido. Formatos permitidos: JPG, PNG, WebP, AVIF, SVG, etc.')
+                return render(request, 'dueno/agregar_producto.html', {
+                    'dueno': dueno,
+                    'cafeteria': cafeteria,
+                })
+            
+            try:
+                producto = Producto.objects.create(
+                    nombre=nombre,
+                    descripcion=descripcion,
+                    precio=float(precio),
+                    cafeteria=cafeteria,
+                    imagen=imagen
+                )
+                messages.success(request, f'Producto "{nombre}" agregado exitosamente.')
+                return redirect('gestionar_productos')
+            except ValueError:
+                messages.error(request, 'El precio debe ser un número válido.')
+        else:
+            messages.error(request, 'Todos los campos son obligatorios.')
+    
+    context = {
+        'dueno': dueno,
+        'cafeteria': cafeteria,
+    }
+    
+    return render(request, 'dueno/agregar_producto.html', context)
+
+
+@login_required
+def editar_producto(request, producto_id):
+    """Vista para editar un producto existente"""
+    if not es_dueno_cafeteria(request.user):
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('home')
+    
+    dueno = request.user.duenocafeteria
+    cafeteria = dueno.cafeteria
+    
+    # Verificar que el producto pertenece a la cafetería del dueño
+    try:
+        producto = Producto.objects.get(id=producto_id, cafeteria=cafeteria)
+    except Producto.DoesNotExist:
+        messages.error(request, 'Producto no encontrado.')
+        return redirect('gestionar_productos')
+    
+    if request.method == 'POST':
+        nombre = request.POST.get('nombre')
+        descripcion = request.POST.get('descripcion')
+        precio = request.POST.get('precio')
+        imagen = request.FILES.get('imagen')
+        
+        if nombre and descripcion and precio:
+            # Validar imagen si se proporciona
+            if imagen and not validar_imagen(imagen):
+                messages.error(request, 'Formato de imagen no válido. Formatos permitidos: JPG, PNG, WebP, AVIF, SVG, etc.')
+                return render(request, 'dueno/editar_producto.html', {
+                    'dueno': dueno,
+                    'cafeteria': cafeteria,
+                    'producto': producto,
+                })
+            
+            try:
+                producto.nombre = nombre
+                producto.descripcion = descripcion
+                producto.precio = float(precio)
+                if imagen:
+                    producto.imagen = imagen
+                producto.save()
+                
+                messages.success(request, f'Producto "{nombre}" actualizado exitosamente.')
+                return redirect('gestionar_productos')
+            except ValueError:
+                messages.error(request, 'El precio debe ser un número válido.')
+        else:
+            messages.error(request, 'Todos los campos son obligatorios.')
+    
+    context = {
+        'dueno': dueno,
+        'cafeteria': cafeteria,
+        'producto': producto,
+    }
+    
+    return render(request, 'dueno/editar_producto.html', context)
+
+
+@login_required
+def eliminar_producto(request, producto_id):
+    """Vista para eliminar un producto"""
+    if not es_dueno_cafeteria(request.user):
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('home')
+    
+    dueno = request.user.duenocafeteria
+    cafeteria = dueno.cafeteria
+    
+    # Verificar que el producto pertenece a la cafetería del dueño
+    try:
+        producto = Producto.objects.get(id=producto_id, cafeteria=cafeteria)
+        nombre_producto = producto.nombre
+        producto.delete()
+        messages.success(request, f'Producto "{nombre_producto}" eliminado exitosamente.')
+    except Producto.DoesNotExist:
+        messages.error(request, 'Producto no encontrado.')
+    
+    return redirect('gestionar_productos')
+
+
+@login_required
+def editar_cafeteria(request):
+    """Vista para editar información de la cafetería"""
+    if not es_dueno_cafeteria(request.user):
+        messages.error(request, 'No tienes permisos para acceder a esta sección.')
+        return redirect('home')
+    
+    dueno = request.user.duenocafeteria
+    cafeteria = dueno.cafeteria
+    
+    if request.method == 'POST':
+        nombre = request.POST.get('nombre')
+        descripcion = request.POST.get('descripcion')
+        direccion = request.POST.get('direccion')
+        telefono = request.POST.get('telefono')
+        horario = request.POST.get('horario')
+        imagen = request.FILES.get('imagen')
+        
+        if nombre and descripcion and direccion:
+            # Validar imagen si se proporciona
+            if imagen and not validar_imagen(imagen):
+                messages.error(request, 'Formato de imagen no válido. Formatos permitidos: JPG, PNG, WebP, AVIF, SVG, etc.')
+                return render(request, 'dueno/editar_cafeteria.html', {
+                    'dueno': dueno,
+                    'cafeteria': cafeteria,
+                })
+            
+            cafeteria.nombre = nombre
+            cafeteria.descripcion = descripcion
+            cafeteria.direccion = direccion
+            cafeteria.telefono = telefono or ''
+            cafeteria.horario = horario or 'L-D: 8:00-20:00'
+            if imagen:
+                cafeteria.imagen = imagen
+            cafeteria.save()
+            
+            # También actualizar en el perfil del dueño
+            dueno.nombre_cafeteria = nombre
+            dueno.descripcion_cafeteria = descripcion
+            dueno.direccion_cafeteria = direccion
+            dueno.telefono_cafeteria = telefono or ''
+            dueno.horario_atencion = horario or 'L-D: 8:00-20:00'
+            dueno.save()
+            
+            messages.success(request, 'Información de la cafetería actualizada exitosamente.')
+            return redirect('panel_dueno')
+        else:
+            messages.error(request, 'Los campos nombre, descripción y dirección son obligatorios.')
+    
+    context = {
+        'dueno': dueno,
+        'cafeteria': cafeteria,
+    }
+    
+    return render(request, 'dueno/editar_cafeteria.html', context)

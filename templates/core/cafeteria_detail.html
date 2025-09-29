@@ -1,12 +1,136 @@
 {% extends 'base.html' %}
 
+{% load static %}
+
 {% block title %}{{ cafeteria.nombre }} - Cafeterías de Sucre{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin="" />
+<link rel="stylesheet" href="{% static 'css/mapa-cafeterias.css' %}">
+<style>
+.popup-directions-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: linear-gradient(135deg, #2563EB, #1d4ed8);
+    color: #ffffff;
+    padding: 0.35rem 0.95rem;
+    border-radius: 9999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 10px 18px rgba(37, 99, 235, 0.35);
+    transition: transform 0.12s ease, box-shadow 0.2s ease;
+}
+
+.popup-directions-btn:hover {
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.45);
+}
+
+.popup-directions-btn:active {
+    transform: scale(0.97);
+}
+
+.popup-directions-btn:focus-visible {
+    outline: 2px solid #bfdbfe;
+    outline-offset: 2px;
+}
+
+.popup-directions-btn i {
+    font-size: 0.95rem;
+}
+
+.popup-card {
+    min-width: 220px;
+    max-width: 260px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.popup-card h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0;
+}
+
+.popup-card p {
+    margin: 0;
+    color: #4b5563;
+    font-size: 0.85rem;
+    line-height: 1.35;
+}
+
+.popup-card .popup-actions {
+    margin-top: 0.4rem;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.map-user-location-control {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent;
+}
+
+.map-user-location-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: #ffffff;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.28);
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.15s ease, opacity 0.2s ease;
+}
+
+.map-user-location-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: #2563EB;
+}
+
+.map-user-location-btn.is-busy {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.map-user-location-btn.is-active {
+    background: linear-gradient(135deg, #2563EB, #1d4ed8);
+    box-shadow: 0 10px 22px rgba(37, 99, 235, 0.4);
+}
+
+.map-user-location-btn.is-active svg {
+    fill: #ffffff;
+}
+
+.map-user-location-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(37, 99, 235, 0.35);
+}
+
+.map-user-location-btn:focus-visible {
+    outline: 2px solid #bfdbfe;
+    outline-offset: 3px;
+}
+
+.map-status-banner {
+    z-index: 900;
+}
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="max-w-6xl mx-auto">
     <!-- Header -->
     <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+        <div class="flex flex-col md:flex-row md:items-start md:justify-between">
             <div class="flex-1">
                 <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ cafeteria.nombre }}</h1>
                 <div class="flex items-center mb-4">
@@ -22,43 +146,58 @@
                     <span class="text-gray-600">({{ cafeteria.calificacion_promedio }}/5 - {{ cafeteria.total_calificaciones }} reseñas)</span>
                 </div>
                 <p class="text-gray-600 mb-4">{{ cafeteria.descripcion }}</p>
-                <div class="flex items-center text-gray-500 mb-2">
-                    <i class="fas fa-map-marker-alt mr-2"></i>
-                    <span>{{ cafeteria.direccion }}</span>
-                </div>
-                {% if cafeteria.telefono %}
-                    <div class="flex items-center text-gray-500 mb-2">
-                        <i class="fas fa-phone mr-2"></i>
+                
+                <!-- Información básica -->
+                <div class="space-y-3 mb-4">
+                    <div class="flex items-center text-gray-700">
+                        <i class="fas fa-map-marker-alt mr-3 text-blue-500"></i>
+                        <span>{{ cafeteria.direccion }}</span>
+                    </div>
+                    {% if cafeteria.telefono %}
+                    <div class="flex items-center text-gray-700">
+                        <i class="fas fa-phone mr-3 text-green-500"></i>
                         <span>{{ cafeteria.telefono }}</span>
                     </div>
-                {% endif %}
-                <div class="flex items-center text-gray-500">
-                    <i class="fas fa-clock mr-2"></i>
-                    <span>{{ cafeteria.horario_apertura }} - {{ cafeteria.horario_cierre }} ({{ cafeteria.dias_apertura }})</span>
+                    {% endif %}
+                    <div class="flex items-center text-gray-700">
+                        <i class="fas fa-location-dot mr-3 text-purple-500"></i>
+                        <span>Zona: {{ cafeteria.zona }}</span>
+                    </div>
                 </div>
             </div>
-            <div class="mt-4 md:mt-0 md:ml-6">
+            
+            <!-- Me gusta -->
+            <div class="mt-4 md:mt-0 md:ml-6 text-center">
                 <button id="me-gusta-btn" 
-                        class="{% if me_gusta %}bg-red-500 hover:bg-red-600{% else %}bg-gray-300 hover:bg-gray-400{% endif %} text-white px-6 py-3 rounded-lg transition duration-200"
+                        class="{% if me_gusta %}text-red-500{% else %}text-gray-400{% endif %} hover:text-red-500 transition duration-200 text-4xl mb-2"
                         data-cafeteria-id="{{ cafeteria.id }}"
-                        data-liked="{{ me_gusta|yesno:'true,false' }}">
-                    <i class="fas fa-heart mr-2"></i>
-                    <span id="me-gusta-text">{% if me_gusta %}Te gusta{% else %}Me gusta{% endif %}</span>
-                    <span id="me-gusta-count">({{ cafeteria.total_me_gusta }})</span>
+                        data-liked="{{ me_gusta|yesno:'true,false' }}"
+                        data-login-url="{% url 'admin:login' %}?next={{ request.get_full_path|urlencode }}">
+                    <i class="fas fa-heart"></i>
                 </button>
+                <div class="text-gray-600 font-semibold">
+                    <span id="me-gusta-count">{{ cafeteria.total_me_gusta }}</span> me gusta
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <!-- Map -->
-        <div class="lg:col-span-2">
+        <div class="lg:col-span-3">
             <div class="bg-white rounded-lg shadow-md p-6">
                 <h2 class="text-xl font-bold text-gray-800 mb-4">
                     <i class="fas fa-map mr-2 text-blue-500"></i>
                     Ubicación
                 </h2>
-                <div id="map" class="w-full h-64 rounded-lg border border-gray-300"></div>
+                <div id="map" class="w-full h-96 rounded-lg border border-gray-300 overflow-hidden" aria-label="Mapa con la ubicación de la cafetería">
+                    <div class="flex items-center justify-center h-full bg-gray-50">
+                        <div class="text-center space-y-2">
+                            <i class="fas fa-spinner fa-spin text-2xl text-coffee-600"></i>
+                            <p class="text-sm text-gray-500">Cargando mapa interactivo...</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -68,55 +207,47 @@
             <div class="bg-white rounded-lg shadow-md p-6">
                 <h3 class="text-lg font-bold text-gray-800 mb-4">
                     <i class="fas fa-clock mr-2 text-green-500"></i>
-                    Horarios
+                    Horarios de Atención
                 </h3>
-                <div class="space-y-2">
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">Apertura:</span>
-                        <span class="font-semibold">{{ cafeteria.horario_apertura }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">Cierre:</span>
-                        <span class="font-semibold">{{ cafeteria.horario_cierre }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">Días:</span>
-                        <span class="font-semibold">{{ cafeteria.dias_apertura }}</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Estadísticas -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h3 class="text-lg font-bold text-gray-800 mb-4">
-                    <i class="fas fa-chart-bar mr-2 text-purple-500"></i>
-                    Estadísticas
-                </h3>
-                <div class="space-y-3">
-                    <div class="flex justify-between items-center">
-                        <span class="text-gray-600">Calificación:</span>
-                        <div class="flex items-center">
-                            <div class="flex text-yellow-400 mr-2">
-                                {% for i in "12345" %}
-                                    {% if forloop.counter <= cafeteria.estrellas %}
-                                        <i class="fas fa-star text-sm"></i>
+                
+                {% if horarios_detallados %}
+                    <div class="space-y-2">
+                        {% for horario in horarios_detallados %}
+                            <div class="flex justify-between items-center {% if horario_hoy and horario.dia_semana == horario_hoy.dia_semana %}bg-green-50 px-2 py-1 rounded{% endif %}">
+                                <span class="text-gray-700 font-medium">{{ horario.get_dia_semana_display }}</span>
+                                <span class="{% if horario.cerrado %}text-red-500{% else %}text-gray-800{% endif %} font-semibold">
+                                    {% if horario.cerrado %}
+                                        Cerrado
                                     {% else %}
-                                        <i class="far fa-star text-sm"></i>
+                                        {{ horario.hora_apertura|time:"g:i A" }} - {{ horario.hora_cierre|time:"g:i A" }}
                                     {% endif %}
-                                {% endfor %}
+                                </span>
                             </div>
-                            <span class="font-semibold">{{ cafeteria.calificacion_promedio }}</span>
+                        {% endfor %}
+                    </div>
+                    
+                    {% if horario_hoy %}
+                        <div class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                            <div class="text-sm text-blue-700">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                <strong>Hoy ({{ horario_hoy.get_dia_semana_display }}):</strong>
+                                {% if horario_hoy.cerrado %}
+                                    <span class="text-red-600 font-semibold">Cerrado</span>
+                                {% else %}
+                                    <span class="text-green-600 font-semibold">
+                                        {{ horario_hoy.hora_apertura|time:"g:i A" }} - {{ horario_hoy.hora_cierre|time:"g:i A" }}
+                                    </span>
+                                {% endif %}
+                            </div>
                         </div>
+                    {% endif %}
+                {% else %}
+                    <!-- Fallback al horario simple si no hay horarios detallados -->
+                    <div class="text-center">
+                        <div class="text-gray-600 text-sm mb-2">Horario de atención</div>
+                        <div class="font-semibold text-gray-800">{{ cafeteria.horario }}</div>
                     </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">Me gusta:</span>
-                        <span class="font-semibold text-red-500">{{ cafeteria.total_me_gusta }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">Reseñas:</span>
-                        <span class="font-semibold">{{ cafeteria.total_calificaciones }}</span>
-                    </div>
-                </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -199,179 +330,800 @@
             {% endfor %}
         </div>
     </div>
-</div>
 
-<script>
-    // Initialize map
-    function initMap() {
-        mapboxgl.accessToken = '{{ MAPBOX_ACCESS_TOKEN }}';
-        
-        const map = new mapboxgl.Map({
-            container: 'map',
-            style: 'mapbox://styles/mapbox/streets-v12',
-            center: [{{ cafeteria.longitud }}, {{ cafeteria.latitud }}], // [lng, lat] para Mapbox
-            zoom: 16
-        });
-
-        // Crear elemento para el marcador personalizado
-        const el = document.createElement('div');
-        el.className = 'marker';
-        el.style.backgroundImage = 'url(data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-            <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="16" cy="16" r="12" fill="#d65a1a" stroke="white" stroke-width="2"/>
-                <text x="16" y="20" text-anchor="middle" fill="white" font-size="16">☕</text>
-            </svg>
-        `) + ')';
-        el.style.width = '32px';
-        el.style.height = '32px';
-        el.style.backgroundSize = 'cover';
-
-        const marker = new mapboxgl.Marker(el)
-            .setLngLat([{{ cafeteria.longitud }}, {{ cafeteria.latitud }}])
-            .addTo(map);
-
-        const popup = new mapboxgl.Popup({ offset: 25 })
-            .setHTML(`
-                <div class="p-2">
-                    <h3 class="font-semibold">{{ cafeteria.nombre }}</h3>
-                    <p class="text-sm text-gray-600">{{ cafeteria.direccion }}</p>
+    <!-- Productos Destacados -->
+    {% if productos %}
+    <div class="bg-white rounded-lg shadow-md p-6 mt-6">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">
+            <i class="fas fa-coffee mr-2 text-coffee-600"></i>
+            Productos Destacados
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for producto in productos %}
+            <div class="border border-gray-200 rounded-lg overflow-hidden flex flex-col">
+                {% if producto.imagen %}
+                    <img src="{{ producto.imagen.url }}" alt="Imagen de {{ producto.nombre }}" class="w-full h-48 object-cover">
+                {% else %}
+                    <div class="w-full h-48 bg-gray-100 flex items-center justify-center">
+                        <i class="fas fa-image text-4xl text-gray-400"></i>
+                    </div>
+                {% endif %}
+                <div class="p-4 flex-grow flex flex-col">
+                    <h3 class="text-lg font-semibold text-gray-800">{{ producto.nombre }}</h3>
+                    <p class="text-gray-600 text-sm mt-1 flex-grow">{{ producto.descripcion }}</p>
+                    <div class="mt-4">
+                        <span class="text-xl font-bold text-coffee-700">{{ producto.precio }} Bs.</span>
+                    </div>
                 </div>
-            `);
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
 
-        marker.setPopup(popup);
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+<script>
+(function() {
+    const cafeteriaId = Number('{{ cafeteria.id }}');
+    const mapData = {
+        nombre: '{{ cafeteria.nombre|escapejs }}',
+        direccion: '{{ cafeteria.direccion|escapejs }}',
+        zona: '{{ cafeteria.zona|escapejs }}',
+        latRaw: '{{ cafeteria.latitud|default_if_none:"" }}',
+        lngRaw: '{{ cafeteria.longitud|default_if_none:"" }}'
+    };
+    const userLocationState = {
+        marker: null,
+        accuracyCircle: null,
+        watchId: null,
+        hasCentered: false,
+        hasShownSuccess: false,
+        lastLatLng: null,
+        routePolyline: null,
+        routeUpdateTimer: null,
+        pendingRouteLatLng: null,
+        isFetchingRoute: false,
+        lastRouteLatLng: null,
+        routeMessageTimestamp: 0,
+        locationButton: null,
+        shouldCenterToUser: false,
+    };
+
+    function buildCafeteriaPopupContent() {
+        const parts = [];
+        if (mapData.direccion) {
+            parts.push(`<p>${mapData.direccion}</p>`);
+        }
+        if (mapData.zona) {
+            parts.push(`<p><strong>Zona:</strong> ${mapData.zona}</p>`);
+        }
+
+        return `
+            <div class="popup-card">
+                <h3>${mapData.nombre}</h3>
+                ${parts.join('')}
+                <div class="popup-actions">
+                    <button type="button" class="popup-directions-btn" aria-label="Abrir indicaciones en Google Maps">
+                        <i class="fas fa-route"></i>
+                        <span>Ir</span>
+                    </button>
+                </div>
+            </div>
+        `;
     }
 
-    // Load Mapbox
-    function loadMapbox() {
-        const script = document.createElement('script');
-        script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
-        script.onload = () => {
-            const link = document.createElement('link');
-            link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
-            link.rel = 'stylesheet';
-            document.head.appendChild(link);
-            
-            // Inicializar mapa cuando Mapbox esté cargado
-            initMap();
-        };
-        document.head.appendChild(script);
+    function createCafeteriaIcon() {
+        return L.icon({
+            iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+            shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
     }
 
-    // Me gusta functionality
-    document.getElementById('me-gusta-btn').addEventListener('click', function() {
-        const cafeteriaId = this.dataset.cafeteriaId;
-        const isLiked = this.dataset.liked === 'true';
-        
-        fetch(`/cafeteria/${cafeteriaId}/me-gusta/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                'Content-Type': 'application/json',
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
-            const btn = document.getElementById('me-gusta-btn');
-            const text = document.getElementById('me-gusta-text');
-            const count = document.getElementById('me-gusta-count');
-            
-            if (data.liked) {
-                btn.className = 'bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg transition duration-200';
-                text.textContent = 'Te gusta';
-            } else {
-                btn.className = 'bg-gray-300 hover:bg-gray-400 text-white px-6 py-3 rounded-lg transition duration-200';
-                text.textContent = 'Me gusta';
-            }
-            
-            count.textContent = `(${data.total_likes})`;
-            btn.dataset.liked = data.liked;
+    function createUserLocationIcon() {
+        return L.divIcon({
+            className: 'user-location-icon-google',
+            html: `
+                <div class="location-marker">
+                    <div class="location-pulse"></div>
+                    <div class="location-dot"></div>
+                </div>
+            `,
+            iconSize: [25, 25],
+            iconAnchor: [12.5, 12.5]
         });
-    });
+    }
 
-    // Rating stars
-    document.querySelectorAll('.star-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const rating = parseInt(this.dataset.rating);
-            document.getElementById('rating-input').value = rating;
-            
-            document.querySelectorAll('.star-btn').forEach((star, index) => {
-                if (index < rating) {
-                    star.innerHTML = '<i class="fas fa-star"></i>';
-                    star.className = 'star-btn text-2xl text-yellow-400 transition duration-200';
-                } else {
-                    star.innerHTML = '<i class="far fa-star"></i>';
-                    star.className = 'star-btn text-2xl text-gray-300 hover:text-yellow-400 transition duration-200';
-                }
-            });
-        });
-    });
+    function parseCoordinate(value) {
+        if (value === null || value === undefined) {
+            return NaN;
+        }
+        const normalized = String(value).trim().replace(',', '.');
+        if (normalized === '') {
+            return NaN;
+        }
+        const parsed = Number.parseFloat(normalized);
+        return Number.isFinite(parsed) ? parsed : NaN;
+    }
 
-    // Comment form
-    document.getElementById('comentario-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const formData = new FormData(this);
-        const data = {
-            comentario: formData.get('comentario'),
-            calificacion: formData.get('calificacion')
-        };
-        
-        if (!data.comentario || !data.calificacion || data.calificacion === '0') {
-            alert('Por favor, completa todos los campos');
+    function initDetailMap() {
+        const mapContainer = document.getElementById('map');
+        if (!mapContainer) {
             return;
         }
-        
-        fetch(`/cafeteria/{{ cafeteria.id }}/comentario/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Add new comment to the list
-                const comentariosLista = document.getElementById('comentarios-lista');
-                const newComment = document.createElement('div');
-                newComment.className = 'border border-gray-200 rounded-lg p-4';
-                newComment.innerHTML = `
-                    <div class="flex items-center justify-between mb-2">
-                        <div class="flex items-center">
-                            <div class="w-8 h-8 bg-coffee-600 rounded-full flex items-center justify-center text-white font-semibold mr-3">
-                                {{ user.first_name|first|default:user.username|first|upper }}
-                            </div>
-                            <div>
-                                <div class="font-semibold">{{ user.first_name|default:user.username }}</div>
-                                <div class="flex text-yellow-400">
-                                    ${'★'.repeat(data.calificacion)}
-                                </div>
-                            </div>
-                        </div>
-                        <span class="text-sm text-gray-500">${data.fecha}</span>
-                    </div>
-                    <p class="text-gray-700">${data.comentario}</p>
-                `;
-                comentariosLista.insertBefore(newComment, comentariosLista.firstChild);
-                
-                // Reset form
-                this.reset();
-                document.getElementById('rating-input').value = '0';
-                document.querySelectorAll('.star-btn').forEach(star => {
-                    star.innerHTML = '<i class="far fa-star"></i>';
-                    star.className = 'star-btn text-2xl text-gray-300 hover:text-yellow-400 transition duration-200';
-                });
-                
-                // Update rating display
-                document.querySelector('.text-gray-600').textContent = `(${data.promedio}/5 - ${data.total_calificaciones} reseñas)`;
-            } else {
-                alert('Error al enviar el comentario');
-            }
-        });
-    });
 
-    // Load maps when page is ready
-    document.addEventListener('DOMContentLoaded', loadMapbox);
+        const lat = parseCoordinate(mapData.latRaw);
+        const lng = parseCoordinate(mapData.lngRaw);
+
+        if (Number.isNaN(lat) || Number.isNaN(lng)) {
+            renderMapFallback(mapContainer, 'Las coordenadas de esta cafetería no están disponibles.');
+            return;
+        }
+
+        try {
+            mapContainer.classList.add('relative');
+            mapContainer.innerHTML = '';
+
+            const cafeteriaLatLng = [lat, lng];
+            const map = L.map(mapContainer, {
+                center: cafeteriaLatLng,
+                zoom: 16,
+                zoomControl: false,
+                scrollWheelZoom: true
+            });
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+
+            L.control.zoom({ position: 'topright' }).addTo(map);
+
+            const marker = L.marker(cafeteriaLatLng, {
+                icon: createCafeteriaIcon(),
+                title: mapData.nombre
+            }).addTo(map);
+
+            marker.bindPopup(buildCafeteriaPopupContent());
+            registerPopupDirections(marker, cafeteriaLatLng);
+            marker.openPopup();
+
+            L.circle(cafeteriaLatLng, {
+                color: '#D65A1A',
+                fillColor: '#D65A1A',
+                fillOpacity: 0.08,
+                radius: 80,
+                weight: 1
+            }).addTo(map);
+
+            createLocationControl(map, cafeteriaLatLng);
+            enableUserLocation(map, cafeteriaLatLng);
+        } catch (error) {
+            console.error('Error al inicializar el mapa:', error);
+            renderMapFallback(mapContainer, 'No pudimos cargar el mapa interactivo. Inténtalo nuevamente en unos segundos.');
+        }
+    }
+
+    function registerPopupDirections(marker, cafeteriaLatLng) {
+        if (!marker) {
+            return;
+        }
+
+        marker.on('popupopen', event => {
+            const popup = event.popup;
+            if (!popup || typeof popup.getElement !== 'function') {
+                return;
+            }
+            const popupEl = popup.getElement();
+            if (!popupEl) {
+                return;
+            }
+            const button = popupEl.querySelector('.popup-directions-btn');
+            if (!button || button.dataset.directionsBound === 'true') {
+                return;
+            }
+            button.dataset.directionsBound = 'true';
+            button.addEventListener('click', event => {
+                event.preventDefault();
+                event.stopPropagation();
+                openGoogleMapsDirections(cafeteriaLatLng);
+            });
+        });
+    }
+
+    function createLocationControl(map, cafeteriaLatLng) {
+        const control = L.control({ position: 'topleft' });
+        control.onAdd = () => {
+            const container = L.DomUtil.create('div', 'map-user-location-control leaflet-bar');
+            const button = L.DomUtil.create('button', 'map-user-location-btn', container);
+            button.type = 'button';
+            button.title = 'Mostrar mi ubicación';
+            button.setAttribute('aria-label', 'Mostrar mi ubicación en el mapa');
+
+            button.innerHTML = `
+                <svg viewBox="0 0 24 24" role="img" aria-hidden="true">
+                    <path d="M12 3a1 1 0 0 1 1 1v1.055a7 7 0 0 1 6.945 6.945H21a1 1 0 1 1 0 2h-1.055A7 7 0 0 1 13 19.945V21a1 1 0 1 1-2 0v-1.055A7 7 0 0 1 4.055 13H3a1 1 0 1 1 0-2h1.055A7 7 0 0 1 11 5.055V4a1 1 0 0 1 1-1Zm0 5a4 4 0 1 0 0 8a4 4 0 0 0 0-8Zm0 2a2 2 0 1 1 0 4a2 2 0 0 1 0-4Z"></path>
+                </svg>
+            `;
+
+            L.DomEvent.disableClickPropagation(button);
+            L.DomEvent.on(button, 'click', event => {
+                L.DomEvent.stop(event);
+
+                button.classList.add('is-busy');
+                userLocationState.shouldCenterToUser = true;
+                enableUserLocation(map, cafeteriaLatLng);
+
+                const targetLatLng = userLocationState.lastLatLng || (userLocationState.marker ? userLocationState.marker.getLatLng() : null);
+                if (targetLatLng) {
+                    map.flyTo(targetLatLng, 18, { duration: 0.85 });
+                    userLocationState.shouldCenterToUser = false;
+                    button.classList.remove('is-busy');
+                    button.classList.add('is-active');
+                }
+            });
+
+            userLocationState.locationButton = button;
+            return container;
+        };
+        control.addTo(map);
+    }
+
+    function openGoogleMapsDirections(cafeteriaLatLng) {
+        const [lat, lng] = cafeteriaLatLng;
+        const params = new URLSearchParams({
+            api: '1',
+            destination: `${lat},${lng}`,
+            travelmode: 'driving'
+        });
+
+        if (userLocationState.lastLatLng) {
+            params.set('origin', `${userLocationState.lastLatLng.lat},${userLocationState.lastLatLng.lng}`);
+        }
+
+        const url = `https://www.google.com/maps/dir/?${params.toString()}`;
+        const newWindow = window.open(url, '_blank');
+        if (newWindow) {
+            newWindow.opener = null;
+        } else {
+            window.location.href = url;
+        }
+
+        if (userLocationState.lastLatLng) {
+            showMapNotification('Abriendo Google Maps con tu ruta en tiempo real.', 'info', 4500);
+        } else {
+            showMapNotification('Google Maps se abrirá con el destino; permite tu ubicación allí para guiarte.', 'info', 5500);
+        }
+    }
+
+    function scheduleRouteUpdate(map, userLatLng, cafeteriaLatLng) {
+        if (!map || !userLatLng) {
+            return;
+        }
+
+        const userLatLngObj = L.latLng(userLatLng);
+        if (userLocationState.lastRouteLatLng) {
+            const delta = map.distance(userLocationState.lastRouteLatLng, userLatLngObj);
+            if (delta < 8 && userLocationState.routePolyline) {
+                return;
+            }
+        }
+
+        userLocationState.pendingRouteLatLng = userLatLngObj;
+
+        if (userLocationState.routeUpdateTimer) {
+            clearTimeout(userLocationState.routeUpdateTimer);
+        }
+
+        const delay = userLocationState.isFetchingRoute ? 1500 : 650;
+        userLocationState.routeUpdateTimer = window.setTimeout(() => {
+            userLocationState.routeUpdateTimer = null;
+            if (userLocationState.pendingRouteLatLng) {
+                fetchRoute(map, userLocationState.pendingRouteLatLng, cafeteriaLatLng);
+            }
+        }, delay);
+    }
+
+    async function fetchRoute(map, userLatLngObj, cafeteriaLatLng) {
+        if (!userLatLngObj) {
+            return;
+        }
+
+        userLocationState.isFetchingRoute = true;
+
+        try {
+            const url = `https://router.project-osrm.org/route/v1/driving/${userLatLngObj.lng},${userLatLngObj.lat};${cafeteriaLatLng[1]},${cafeteriaLatLng[0]}?overview=full&geometries=geojson&alternatives=false&steps=false`;
+            const response = await fetch(url, { cache: 'no-store' });
+            if (!response.ok) {
+                throw new Error(`Estado inesperado de la ruta: ${response.status}`);
+            }
+
+            const data = await response.json();
+            if (!data.routes || data.routes.length === 0) {
+                throw new Error('Sin rutas disponibles.');
+            }
+
+            const route = data.routes[0];
+            const coordinates = route.geometry.coordinates.map(([lng, lat]) => [lat, lng]);
+
+            if (!userLocationState.routePolyline) {
+                userLocationState.routePolyline = L.polyline(coordinates, {
+                    color: '#2563EB',
+                    weight: 5,
+                    opacity: 0.7,
+                    lineCap: 'round',
+                    lineJoin: 'round'
+                }).addTo(map);
+            } else {
+                userLocationState.routePolyline.setLatLngs(coordinates);
+            }
+
+            if (userLocationState.routePolyline && userLocationState.routePolyline.bringToFront) {
+                userLocationState.routePolyline.bringToFront();
+            }
+
+            userLocationState.lastRouteLatLng = userLatLngObj;
+            userLocationState.pendingRouteLatLng = null;
+
+            const now = Date.now();
+            if (now - userLocationState.routeMessageTimestamp > 15000) {
+                const distanceMeters = route.distance ?? 0;
+                const durationSeconds = route.duration ?? 0;
+
+                const distanceText = distanceMeters >= 1000
+                    ? `${(distanceMeters / 1000).toFixed(1)} km`
+                    : `${Math.round(distanceMeters)} m`;
+
+                const durationMinutes = Math.max(1, Math.round(durationSeconds / 60));
+                const durationText = durationMinutes >= 60
+                    ? `${Math.floor(durationMinutes / 60)} h ${durationMinutes % 60} min`
+                    : `${durationMinutes} min`;
+
+                showMapNotification(`Ruta actualizada · ${distanceText} · ${durationText}`, 'info', 6000);
+                userLocationState.routeMessageTimestamp = now;
+            }
+        } catch (error) {
+            console.error('Error al calcular la ruta:', error);
+            showMapNotification('No pudimos trazar la ruta en este momento.', 'error', 6000);
+        } finally {
+            userLocationState.isFetchingRoute = false;
+        }
+    }
+
+    function clearRoute() {
+        if (userLocationState.routePolyline) {
+            userLocationState.routePolyline.remove();
+            userLocationState.routePolyline = null;
+        }
+        if (userLocationState.routeUpdateTimer) {
+            clearTimeout(userLocationState.routeUpdateTimer);
+            userLocationState.routeUpdateTimer = null;
+        }
+        userLocationState.pendingRouteLatLng = null;
+        userLocationState.lastRouteLatLng = null;
+        userLocationState.lastLatLng = null;
+        userLocationState.routeMessageTimestamp = 0;
+        userLocationState.isFetchingRoute = false;
+    }
+
+    function showMapNotification(message, variant = 'info', timeoutMs = 4000) {
+        const mapContainer = document.getElementById('map');
+        if (!mapContainer) {
+            return;
+        }
+
+        mapContainer.classList.add('relative');
+
+        let banner = mapContainer.querySelector('.map-status-banner');
+        if (!banner) {
+            banner = document.createElement('div');
+            banner.className = 'map-status-banner absolute top-3 left-3 px-4 py-2 rounded-lg shadow text-sm font-medium flex items-center gap-2 pointer-events-none transition-opacity duration-300';
+            mapContainer.appendChild(banner);
+        }
+
+        if (banner.dataset.timeoutId) {
+            clearTimeout(Number(banner.dataset.timeoutId));
+            delete banner.dataset.timeoutId;
+        }
+
+        const toneClasses = {
+            loading: 'bg-white/90 text-blue-700 border border-blue-200',
+            success: 'bg-green-100 text-green-700 border border-green-200',
+            error: 'bg-red-100 text-red-700 border border-red-200',
+            info: 'bg-white/90 text-gray-700 border border-gray-200'
+        };
+
+        const toneClass = toneClasses[variant] || toneClasses.info;
+        banner.className = `map-status-banner absolute top-3 left-3 px-4 py-2 rounded-lg shadow text-sm font-medium flex items-center gap-2 pointer-events-none transition-opacity duration-300 ${toneClass}`;
+        banner.innerHTML = `<span>${message}</span>`;
+        banner.style.opacity = '1';
+
+        if (timeoutMs && timeoutMs > 0) {
+            const timeoutId = window.setTimeout(() => {
+                banner.style.opacity = '0';
+            }, timeoutMs);
+            banner.dataset.timeoutId = String(timeoutId);
+        }
+    }
+
+    function enableUserLocation(map, cafeteriaLatLng) {
+        const locationBtn = userLocationState.locationButton;
+
+        if (!navigator.geolocation) {
+            showMapNotification('Tu navegador no soporta geolocalización.', 'error', 7000);
+            if (locationBtn) {
+                locationBtn.classList.remove('is-busy');
+                locationBtn.classList.remove('is-active');
+            }
+            return;
+        }
+
+        if (userLocationState.watchId !== null) {
+            if (locationBtn) {
+                locationBtn.classList.remove('is-busy');
+                locationBtn.classList.add('is-active');
+            }
+            if (userLocationState.shouldCenterToUser && userLocationState.lastLatLng) {
+                map.flyTo(userLocationState.lastLatLng, 18, { duration: 0.85 });
+                userLocationState.shouldCenterToUser = false;
+            }
+            return;
+        }
+
+        const mapContainer = document.getElementById('map');
+        if (!mapContainer) {
+            if (locationBtn) {
+                locationBtn.classList.remove('is-busy');
+            }
+            return;
+        }
+
+        if (locationBtn) {
+            locationBtn.classList.add('is-busy');
+        }
+
+        showMapNotification('Buscando tu ubicación...', 'loading', 0);
+
+        const updateUserLocation = (position) => {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            const accuracy = position.coords.accuracy ?? 50;
+            const latLng = [latitude, longitude];
+
+            if (!userLocationState.marker) {
+                userLocationState.marker = L.marker(latLng, {
+                    icon: createUserLocationIcon(),
+                    interactive: false,
+                    zIndexOffset: 400
+                }).addTo(map).bindTooltip('Tu ubicación', {
+                    direction: 'top',
+                    offset: [0, -12],
+                    permanent: false
+                });
+            } else {
+                userLocationState.marker.setLatLng(latLng);
+            }
+
+            if (!userLocationState.accuracyCircle) {
+                userLocationState.accuracyCircle = L.circle(latLng, {
+                    radius: Math.max(accuracy, 25),
+                    color: '#2563EB',
+                    fillColor: '#3B82F6',
+                    fillOpacity: 0.15,
+                    weight: 1
+                }).addTo(map);
+            } else {
+                userLocationState.accuracyCircle.setLatLng(latLng);
+                userLocationState.accuracyCircle.setRadius(Math.max(accuracy, 25));
+            }
+
+            userLocationState.lastLatLng = L.latLng(latLng);
+            scheduleRouteUpdate(map, userLocationState.lastLatLng, cafeteriaLatLng);
+
+            if (locationBtn) {
+                locationBtn.classList.remove('is-busy');
+                locationBtn.classList.add('is-active');
+            }
+
+            if (userLocationState.shouldCenterToUser && userLocationState.lastLatLng) {
+                map.flyTo(userLocationState.lastLatLng, 18, { duration: 0.85 });
+                userLocationState.shouldCenterToUser = false;
+                userLocationState.hasCentered = true;
+            } else if (!userLocationState.hasCentered) {
+                const bounds = L.latLngBounds([cafeteriaLatLng, latLng]);
+                if (bounds.isValid() && bounds.getNorthEast().equals(bounds.getSouthWest())) {
+                    map.setView(latLng, 17);
+                } else {
+                    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 17 });
+                }
+                userLocationState.hasCentered = true;
+            }
+        };
+
+        const handleSuccess = (position) => {
+            updateUserLocation(position);
+            if (!userLocationState.hasShownSuccess) {
+                showMapNotification('Ubicación detectada correctamente.', 'success', 4500);
+                userLocationState.hasShownSuccess = true;
+            }
+            if (locationBtn) {
+                locationBtn.classList.remove('is-busy');
+                locationBtn.classList.add('is-active');
+            }
+        };
+
+        const handleError = (error) => {
+            let message = 'No pudimos obtener tu ubicación.';
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    message = 'Debes permitir el acceso a tu ubicación para visualizarla en el mapa.';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    message = 'La señal de ubicación no está disponible en este momento.';
+                    break;
+                case error.TIMEOUT:
+                    message = 'La búsqueda de tu ubicación tardó demasiado. Inténtalo nuevamente.';
+                    break;
+            }
+            showMapNotification(message, 'error', 7000);
+
+            clearRoute();
+
+            if (userLocationState.marker) {
+                userLocationState.marker.remove();
+                userLocationState.marker = null;
+            }
+            if (userLocationState.accuracyCircle) {
+                userLocationState.accuracyCircle.remove();
+                userLocationState.accuracyCircle = null;
+            }
+
+            userLocationState.hasCentered = false;
+            userLocationState.hasShownSuccess = false;
+            userLocationState.lastLatLng = null;
+
+            if (locationBtn) {
+                locationBtn.classList.remove('is-busy');
+                locationBtn.classList.remove('is-active');
+            }
+
+            if (userLocationState.watchId !== null) {
+                navigator.geolocation.clearWatch(userLocationState.watchId);
+                userLocationState.watchId = null;
+            }
+        };
+
+        userLocationState.watchId = navigator.geolocation.watchPosition(
+            position => {
+                handleSuccess(position);
+            },
+            error => {
+                handleError(error);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 12000,
+                maximumAge: 1000
+            }
+        );
+
+        window.addEventListener('beforeunload', () => {
+            if (userLocationState.watchId !== null) {
+                navigator.geolocation.clearWatch(userLocationState.watchId);
+                userLocationState.watchId = null;
+            }
+            clearRoute();
+            if (userLocationState.marker) {
+                userLocationState.marker.remove();
+                userLocationState.marker = null;
+            }
+            if (userLocationState.accuracyCircle) {
+                userLocationState.accuracyCircle.remove();
+                userLocationState.accuracyCircle = null;
+            }
+            if (locationBtn) {
+                locationBtn.classList.remove('is-busy');
+                locationBtn.classList.remove('is-active');
+            }
+        }, { once: true });
+    }
+
+    function renderMapFallback(container, reason) {
+        const lat = parseCoordinate(mapData.latRaw);
+        const lng = parseCoordinate(mapData.lngRaw);
+        const hasCoords = !Number.isNaN(lat) && !Number.isNaN(lng);
+
+        container.innerHTML = `
+            <div class="w-full h-full bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center border-2 border-blue-200 rounded-lg">
+                <div class="text-center p-6 max-w-md space-y-4">
+                    <div>
+                        <i class="fas fa-map-marker-alt text-5xl text-red-500 mb-3"></i>
+                        <h3 class="text-xl font-bold text-gray-800">${mapData.nombre}</h3>
+                        <p class="text-gray-600">${mapData.direccion}</p>
+                        <p class="text-sm text-gray-500">Zona: ${mapData.zona || 'No especificada'}</p>
+                    </div>
+                    <p class="text-sm text-blue-700 bg-blue-100 border border-blue-200 rounded-lg px-4 py-2">${reason}</p>
+                    ${hasCoords ? `
+                        <div class="bg-white rounded-lg p-4 shadow-sm">
+                            <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Coordenadas GPS</p>
+                            <p class="font-mono text-sm text-gray-700 font-semibold">${formatCoordinate(lat)}, ${formatCoordinate(lng)}</p>
+                        </div>
+                        <div class="space-y-2">
+                            <a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank"
+                               class="block bg-blue-500 text-white px-5 py-2 rounded-lg hover:bg-blue-600 transition text-sm font-semibold">
+                                <i class="fas fa-external-link-alt mr-2"></i>Abrir en Google Maps
+                            </a>
+                            <a href="https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}&zoom=17" target="_blank"
+                               class="block bg-green-500 text-white px-5 py-2 rounded-lg hover:bg-green-600 transition text-sm font-semibold">
+                                <i class="fas fa-map mr-2"></i>Ver en OpenStreetMap
+                            </a>
+                            <a href="https://maps.apple.com/?ll=${lat},${lng}&q=${encodeURIComponent(mapData.nombre)}" target="_blank"
+                               class="block bg-gray-800 text-white px-5 py-2 rounded-lg hover:bg-gray-900 transition text-sm font-semibold">
+                                <i class="fas fa-location-dot mr-2"></i>Ver en Apple Maps
+                            </a>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    function formatCoordinate(value) {
+        return Number(value).toFixed(6);
+    }
+
+    function initMeGustaButton() {
+        const btn = document.getElementById('me-gusta-btn');
+        if (!btn) {
+            return;
+        }
+
+        btn.addEventListener('click', () => {
+            const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+            if (!csrfInput) {
+                const loginUrl = btn.dataset.loginUrl;
+                if (loginUrl) {
+                    window.location.href = loginUrl;
+                } else {
+                    alert('Inicia sesión para marcar tus cafeterías favoritas.');
+                }
+                return;
+            }
+
+            btn.disabled = true;
+
+            fetch(`/cafeteria/${cafeteriaId}/me-gusta/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfInput.value,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({})
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Estado inesperado: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const count = document.getElementById('me-gusta-count');
+                    if (data.liked) {
+                        btn.className = 'text-red-500 hover:text-red-500 transition duration-200 text-4xl mb-2';
+                    } else {
+                        btn.className = 'text-gray-400 hover:text-red-500 transition duration-200 text-4xl mb-2';
+                    }
+
+                    if (count && typeof data.total_likes !== 'undefined') {
+                        count.textContent = data.total_likes;
+                    }
+                    btn.dataset.liked = data.liked ? 'true' : 'false';
+                })
+                .catch(error => {
+                    console.error('Error al actualizar Me gusta:', error);
+                    alert('No pudimos actualizar tu Me gusta. Inténtalo nuevamente en unos segundos.');
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                });
+        });
+    }
+
+    function initRatingStars() {
+        const starButtons = document.querySelectorAll('.star-btn');
+        const ratingInput = document.getElementById('rating-input');
+
+        if (!ratingInput || starButtons.length === 0) {
+            return;
+        }
+
+        starButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const rating = Number(btn.dataset.rating) || 0;
+                ratingInput.value = rating;
+
+                starButtons.forEach((star, idx) => {
+                    if (idx < rating) {
+                        star.innerHTML = '<i class="fas fa-star"></i>';
+                        star.className = 'star-btn text-2xl text-yellow-400 transition duration-200';
+                    } else {
+                        star.innerHTML = '<i class="far fa-star"></i>';
+                        star.className = 'star-btn text-2xl text-gray-300 hover:text-yellow-400 transition duration-200';
+                    }
+                });
+            });
+        });
+    }
+
+    function initComentarioForm() {
+        const form = document.getElementById('comentario-form');
+        if (!form) {
+            return;
+        }
+
+        form.addEventListener('submit', event => {
+            event.preventDefault();
+
+            const formData = new FormData(form);
+            const comentario = formData.get('comentario');
+            const calificacion = formData.get('calificacion');
+            const csrfToken = formData.get('csrfmiddlewaretoken');
+
+            if (!comentario || !calificacion || calificacion === '0') {
+                alert('Por favor, comparte un comentario y elige una calificación.');
+                return;
+            }
+
+            if (!csrfToken) {
+                alert('No pudimos validar tu sesión. Recarga la página e inténtalo de nuevo.');
+                return;
+            }
+
+            fetch(`/cafeteria/${cafeteriaId}/comentario/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    comentario,
+                    calificacion
+                })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Estado inesperado: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    } else {
+                        alert('No pudimos guardar tu reseña. Inténtalo nuevamente.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al enviar comentario:', error);
+                    alert('Ocurrió un problema al enviar tu reseña. Inténtalo en unos minutos.');
+                });
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initDetailMap();
+        initMeGustaButton();
+        initRatingStars();
+        initComentarioForm();
+    });
+})();
 </script>
 {% endblock %}

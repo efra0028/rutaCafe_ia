@@ -1,0 +1,117 @@
+{% extends 'dueno/base_dueno.html' %}
+
+{% block title %}Editar Producto - {{ cafeteria.nombre }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">Editar Producto</h2>
+            <p class="text-gray-600">Modifica la información del producto "{{ producto.nombre }}"</p>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+            
+            <div>
+                <label for="nombre" class="block text-sm font-medium text-gray-700 mb-2">
+                    Nombre del Producto *
+                </label>
+                <input type="text" id="nombre" name="nombre" required 
+                       value="{{ producto.nombre }}"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500 focus:border-coffee-500">
+            </div>
+
+            <div>
+                <label for="descripcion" class="block text-sm font-medium text-gray-700 mb-2">
+                    Descripción *
+                </label>
+                <textarea id="descripcion" name="descripcion" required rows="4"
+                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500 focus:border-coffee-500">{{ producto.descripcion }}</textarea>
+            </div>
+
+            <div>
+                <label for="precio" class="block text-sm font-medium text-gray-700 mb-2">
+                    Precio (Bs.) *
+                </label>
+          <input type="number" id="precio" name="precio" required step="0.01" min="0"
+              value="{{ request.POST.precio|default:producto.precio|stringformat:'s' }}"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500 focus:border-coffee-500">
+            </div>
+
+            <div>
+                <label for="imagen" class="block text-sm font-medium text-gray-700 mb-2">
+                    Imagen del Producto
+                </label>
+                {% if producto.imagen %}
+                <div class="mb-4">
+                    <p class="text-sm text-gray-600 mb-2">Imagen actual:</p>
+                    <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}" 
+                         class="h-32 w-32 object-cover rounded-lg border">
+                </div>
+                {% endif %}
+                <div id="drop-area" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-coffee-500 transition duration-200 cursor-pointer bg-white">
+                    <div class="space-y-1 text-center" id="drop-content">
+                        <i class="fas fa-cloud-upload-alt text-3xl text-gray-400"></i>
+                        <div class="flex text-sm text-gray-600">
+                            <label for="imagen" class="relative cursor-pointer bg-white rounded-md font-medium text-coffee-600 hover:text-coffee-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-coffee-500">
+                                <span>{% if producto.imagen %}Cambiar imagen{% else %}Subir una imagen{% endif %}</span>
+                                <input id="imagen" name="imagen" type="file" class="sr-only" accept="image/*,.webp,.avif,.heic,.svg">
+                            </label>
+                            <p class="pl-1">o arrastra y suelta</p>
+                        </div>
+                        <p class="text-xs text-gray-500">PNG, JPG, JPEG, WebP, AVIF, SVG hasta 10MB</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between pt-6">
+                <a href="{% url 'gestionar_productos' %}" 
+                   class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition duration-200">
+                    <i class="fas fa-arrow-left mr-2"></i>Cancelar
+                </a>
+                <button type="submit" 
+                        class="px-8 py-3 bg-coffee-600 text-white rounded-lg hover:bg-coffee-700 transition duration-200">
+                    <i class="fas fa-save mr-2"></i>Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Drag & Drop funcional
+const dropArea = document.getElementById('drop-area');
+const inputImagen = document.getElementById('imagen');
+const dropContent = document.getElementById('drop-content');
+
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dropArea.addEventListener(eventName, e => e.preventDefault());
+    dropArea.addEventListener(eventName, e => e.stopPropagation());
+});
+['dragenter', 'dragover'].forEach(eventName => {
+    dropArea.classList.add('border-coffee-500', 'bg-coffee-50');
+});
+['dragleave', 'drop'].forEach(eventName => {
+    dropArea.classList.remove('border-coffee-500', 'bg-coffee-50');
+});
+dropArea.addEventListener('drop', e => {
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        inputImagen.files = files;
+        mostrarPreview(files[0]);
+    }
+});
+inputImagen.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) mostrarPreview(file);
+});
+function mostrarPreview(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        dropArea.innerHTML = '<div class="text-center"><img src="' + e.target.result + '" class="h-32 w-32 object-cover rounded-lg mx-auto mb-2"><p class="text-sm text-gray-600">Nueva imagen seleccionada</p></div>';
+    };
+    reader.readAsDataURL(file);
+}
+</script>
+{% endblock %}

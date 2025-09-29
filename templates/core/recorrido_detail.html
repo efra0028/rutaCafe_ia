@@ -4,6 +4,9 @@
 
 {% block content %}
 <div class="max-w-6xl mx-auto">
+    <form id="csrf-token-form" style="display:none;">
+        {% csrf_token %}
+    </form>
     <!-- Header del Recorrido -->
     <div class="bg-white rounded-lg shadow-md p-6 mb-6">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between">
@@ -43,11 +46,14 @@
                     <i class="fas fa-list mr-2 text-blue-500"></i>
                     Cafeterías del Recorrido
                 </h2>
-                <div class="space-y-3">
+                <div class="space-y-3" data-cafeteria-list>
                     {% for cafeteria in cafeterias %}
-                        <div class="border border-gray-200 rounded-lg p-4 {% if cafeteria in recorrido_usuario.cafeterias_visitadas.all %}bg-green-50 border-green-200{% endif %}">
+                        <div class="border border-gray-200 rounded-lg p-4 {% if cafeteria in recorrido_usuario.cafeterias_visitadas.all %}bg-green-50 border-green-200{% endif %}" data-cafeteria-id="{{ cafeteria.id }}">
                             <div class="flex items-center justify-between mb-2">
-                                <h3 class="font-semibold">{{ cafeteria.nombre }}</h3>
+                                <div class="flex items-center gap-2">
+                                    <span class="flex items-center justify-center w-7 h-7 rounded-full text-xs font-semibold text-white bg-blue-500" data-order-badge>{{ forloop.counter }}</span>
+                                    <h3 class="font-semibold">{{ cafeteria.nombre }}</h3>
+                                </div>
                                 {% if cafeteria in recorrido_usuario.cafeterias_visitadas.all %}
                                     <span class="bg-green-500 text-white text-xs px-2 py-1 rounded-full">
                                         <i class="fas fa-check mr-1"></i>Visitada
@@ -106,19 +112,23 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="text-center">
                 <div class="text-3xl font-bold text-blue-600 mb-2">
-                    {{ recorrido_usuario.cafeterias_visitadas.count }}
+                    {{ cafeterias_visitadas }}
                 </div>
                 <div class="text-gray-600">Cafeterías Visitadas</div>
             </div>
             <div class="text-center">
                 <div class="text-3xl font-bold text-green-600 mb-2">
-                    {{ cafeterias.count|add:"-"|add:recorrido_usuario.cafeterias_visitadas.count }}
+                    {{ cafeterias_restantes }}
                 </div>
                 <div class="text-gray-600">Restantes</div>
             </div>
             <div class="text-center">
                 <div class="text-3xl font-bold text-purple-600 mb-2">
-                    {% widthratio recorrido_usuario.cafeterias_visitadas.count cafeterias.count 100 %}%
+                    {% if total_cafeterias > 0 %}
+                        {% widthratio cafeterias_visitadas total_cafeterias 100 %}%
+                    {% else %}
+                        0%
+                    {% endif %}
                 </div>
                 <div class="text-gray-600">Completado</div>
             </div>
@@ -126,109 +136,548 @@
     </div>
 </div>
 
+{{ cafeterias_data|json_script:"cafeterias-data" }}
+
 <script>
+    const MAPBOX_TOKEN = '{{ MAPBOX_ACCESS_TOKEN }}';
     let map;
+    let mapInitialized = false;
+    let markers = [];
+    let userMarker = null;
+    let directionsAbortController = null;
+    let shouldFitToRoute = true;
+    const cafeteriasDataElement = document.getElementById('cafeterias-data');
+    const cafeteriasRaw = cafeteriasDataElement ? JSON.parse(cafeteriasDataElement.textContent) : [];
+    let orderedCafes = cafeteriasRaw.map(cafe => ({ ...cafe }));
+    let userLocation = null;
 
     function initMap() {
-        mapboxgl.accessToken = '{{ MAPBOX_ACCESS_TOKEN }}';
-        
+        if (mapInitialized) {
+            return;
+        }
+        mapInitialized = true;
+
+        mapboxgl.accessToken = MAPBOX_TOKEN;
+
+        if (!orderedCafes.length) {
+            document.getElementById('map').innerHTML = `
+                <div class="flex items-center justify-center h-full text-gray-500">
+                    <div class="text-center">
+                        <i class="fas fa-info-circle text-3xl mb-2"></i>
+                        <p>No hay cafeterías registradas en este recorrido.</p>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        const initialCenter = [orderedCafes[0].lng, orderedCafes[0].lat];
+
         map = new mapboxgl.Map({
             container: 'map',
             style: 'mapbox://styles/mapbox/streets-v12',
-            center: [-65.2595, -19.0478], // [lng, lat] para Mapbox
+            center: initialCenter,
             zoom: 14
         });
 
-        // Agregar marcadores para las cafeterías
-        const cafeterias = [
-            {% for cafeteria in cafeterias %}
-                {
-                    id: {{ cafeteria.id }},
-                    nombre: "{{ cafeteria.nombre }}",
-                    direccion: "{{ cafeteria.direccion }}",
-                    lat: {{ cafeteria.latitud }},
-                    lng: {{ cafeteria.longitud }},
-                    visitada: {% if cafeteria in recorrido_usuario.cafeterias_visitadas.all %}true{% else %}false{% endif %}
-                }{% if not forloop.last %},{% endif %}
-            {% endfor %}
-        ];
+        map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
-        cafeterias.forEach((cafe, index) => {
-            // Crear elemento para el marcador personalizado
-            const el = document.createElement('div');
-            el.className = 'marker';
-            el.style.backgroundImage = 'url(data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="16" cy="16" r="12" fill="${cafe.visitada ? '#10b981' : '#d65a1a'}" stroke="white" stroke-width="2"/>
-                    <text x="16" y="20" text-anchor="middle" fill="white" font-size="16">${cafe.visitada ? '✓' : '☕'}</text>
-                </svg>
-            `) + ')';
-            el.style.width = '32px';
-            el.style.height = '32px';
-            el.style.backgroundSize = 'cover';
+        // Agregar control de ubicación personalizado estilo Google Maps
+        class LocationControl {
+            onAdd(map) {
+                this.map = map;
+                this.container = document.createElement('div');
+                this.container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group';
+                this.container.style.cssText = `
+                    background: #fff;
+                    border: none;
+                    border-radius: 2px;
+                    box-shadow: 0 2px 6px rgba(0,0,0,.3);
+                    cursor: pointer;
+                    width: 40px;
+                    height: 40px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: all 0.3s;
+                `;
+                this.container.title = 'Mostrar tu ubicación';
+                
+                // Icono de ubicación como pin (igual a la imagen)
+                this.container.innerHTML = `
+                    <svg width="18" height="18" viewBox="0 0 24 24" style="pointer-events: none;">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#5f6368"/>
+                    </svg>
+                `;
+                
+                this.container.addEventListener('mouseenter', () => {
+                    this.container.style.backgroundColor = '#f5f5f5';
+                });
+                
+                this.container.addEventListener('mouseleave', () => {
+                    this.container.style.backgroundColor = '#fff';
+                });
+                
+                this.container.addEventListener('click', () => {
+                    this.container.style.backgroundColor = '#e8f0fe';
+                    this.container.innerHTML = `
+                        <svg width="18" height="18" viewBox="0 0 24 24" style="pointer-events: none;">
+                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#1a73e8"/>
+                        </svg>
+                    `;
+                    
+                    this.centerOnUserLocation();
+                    
+                    // Restaurar estilo después de 300ms
+                    setTimeout(() => {
+                        this.container.style.backgroundColor = '#fff';
+                        this.container.innerHTML = `
+                            <svg width="18" height="18" viewBox="0 0 24 24" style="pointer-events: none;">
+                                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#5f6368"/>
+                            </svg>
+                        `;
+                    }, 300);
+                });
+                
+                return this.container;
+            }
+            
+            onRemove() {
+                this.container.parentNode.removeChild(this.container);
+                this.map = undefined;
+            }
+            
+            centerOnUserLocation() {
+                if (userLocation) {
+                    map.flyTo({
+                        center: [userLocation.lng, userLocation.lat],
+                        zoom: 16,
+                        duration: 1000
+                    });
+                } else {
+                    requestUserLocation();
+                }
+            }
+        }
+        
+        map.addControl(new LocationControl(), 'top-left');
 
-            const marker = new mapboxgl.Marker(el)
-                .setLngLat([cafe.lng, cafe.lat])
-                .addTo(map);
+        map.on('load', () => {
+            renderRouteAndMarkers({ shouldFit: true });
+            requestUserLocation();
+        });
+    }
 
-            const popup = new mapboxgl.Popup({ offset: 25 })
+    function renderRouteAndMarkers({ shouldFit = true } = {}) {
+        if (!map) {
+            return;
+        }
+
+        markers.forEach(marker => marker.remove());
+        markers = [];
+
+        let bounds = null;
+
+        orderedCafes.forEach((cafe, index) => {
+            if (!Number.isFinite(cafe.lat) || !Number.isFinite(cafe.lng)) {
+                return;
+            }
+
+            const markerElement = document.createElement('div');
+            markerElement.style.display = 'flex';
+            markerElement.style.alignItems = 'center';
+            markerElement.style.justifyContent = 'center';
+            markerElement.style.width = '36px';
+            markerElement.style.height = '36px';
+            markerElement.style.borderRadius = '50%';
+            markerElement.style.color = '#ffffff';
+            markerElement.style.fontWeight = '700';
+            markerElement.style.fontSize = '14px';
+            markerElement.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.25)';
+            markerElement.style.border = '2px solid rgba(255, 255, 255, 0.9)';
+            markerElement.style.background = cafe.visitada ? 'linear-gradient(135deg, #059669, #10b981)' : 'linear-gradient(135deg, #f97316, #ea580c)';
+            markerElement.textContent = index + 1;
+
+            const popup = new mapboxgl.Popup({ 
+                offset: 25,
+                closeButton: true,
+                closeOnClick: false,
+                className: 'cafeteria-popup'
+            })
                 .setHTML(`
-                    <div class="p-2">
-                        <h3 class="font-semibold">${cafe.nombre}</h3>
-                        <p class="text-sm text-gray-600">${cafe.direccion}</p>
-                        <p class="text-sm ${cafe.visitada ? 'text-green-600' : 'text-orange-600'}">
-                            ${cafe.visitada ? '✓ Visitada' : '⏳ Pendiente'}
-                        </p>
+                    <div class="p-4 max-w-sm">
+                        <div class="flex items-start justify-between mb-3">
+                            <h3 class="font-bold text-lg text-gray-800 pr-2">${cafe.nombre}</h3>
+                        </div>
+                        <div class="space-y-2 mb-4">
+                            <p class="text-sm text-gray-600 flex items-start">
+                                <i class="fas fa-map-marker-alt mr-2 mt-0.5 text-red-500"></i>
+                                <span>${cafe.direccion}</span>
+                            </p>
+                            <p class="text-sm flex items-center ${cafe.visitada ? 'text-green-600' : 'text-orange-600'}">
+                                <i class="fas ${cafe.visitada ? 'fa-check-circle' : 'fa-clock'} mr-2"></i>
+                                <span class="font-medium">${cafe.visitada ? 'Visitada' : 'Pendiente'}</span>
+                            </p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="navegarACafeteria(${cafe.lat}, ${cafe.lng})" 
+                                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md text-sm font-medium transition duration-200 flex items-center justify-center">
+                                <i class="fas fa-directions mr-1"></i>
+                                Ir
+                            </button>
+                            ${!cafe.visitada ? `
+                            <button onclick="marcarComoVisitada(${cafe.id})" 
+                                    class="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-md text-sm font-medium transition duration-200 flex items-center justify-center">
+                                <i class="fas fa-check mr-1"></i>
+                                Marcar
+                            </button>
+                            ` : ''}
+                        </div>
                     </div>
                 `);
 
-            marker.setPopup(popup);
+            const marker = new mapboxgl.Marker(markerElement)
+                .setLngLat([cafe.lng, cafe.lat])
+                .setPopup(popup)
+                .addTo(map);
+
+            markers.push(marker);
+
+            if (!bounds) {
+                bounds = new mapboxgl.LngLatBounds([cafe.lng, cafe.lat], [cafe.lng, cafe.lat]);
+            } else {
+                bounds.extend([cafe.lng, cafe.lat]);
+            }
         });
 
-        // Dibujar ruta si hay cafeterías
-        if (cafeterias.length > 0) {
-            const coordinates = cafeterias.map(cafe => [cafe.lng, cafe.lat]);
-
-            // Agregar fuente de datos para la ruta
-            if (map.getSource('route')) {
-                map.removeLayer('route');
-                map.removeSource('route');
+        if (userLocation) {
+            renderUserMarker();
+            if (bounds) {
+                bounds.extend([userLocation.lng, userLocation.lat]);
+            } else {
+                bounds = new mapboxgl.LngLatBounds([userLocation.lng, userLocation.lat], [userLocation.lng, userLocation.lat]);
             }
+        } else if (userMarker) {
+            userMarker.remove();
+            userMarker = null;
+        }
 
-            map.addSource('route', {
-                'type': 'geojson',
-                'data': {
-                    'type': 'Feature',
-                    'properties': {},
-                    'geometry': {
-                        'type': 'LineString',
-                        'coordinates': coordinates
-                    }
-                }
-            });
+        updateListOrdering();
+        updateRoute({ shouldFit: shouldFit && shouldFitToRoute });
 
-            // Agregar capa de línea para la ruta
-            map.addLayer({
-                'id': 'route',
-                'type': 'line',
-                'source': 'route',
-                'layout': {
-                    'line-join': 'round',
-                    'line-cap': 'round'
-                },
-                'paint': {
-                    'line-color': '#d65a1a',
-                    'line-width': 4
-                }
-            });
+        if (shouldFit && bounds && !bounds.isEmpty()) {
+            map.fitBounds(bounds, { padding: 80, maxZoom: 16, duration: 800 });
+            shouldFitToRoute = false;
         }
     }
 
+    function renderUserMarker() {
+        if (!map || !userLocation) {
+            return;
+        }
+
+        if (userMarker) {
+            userMarker.remove();
+        }
+
+        // Crear marcador de ubicación exacto al del mapa de cafeterías
+        const userElement = document.createElement('div');
+        userElement.className = 'user-location-marker-google';
+        userElement.innerHTML = `
+            <div class="location-marker">
+                <!-- Círculo exterior azul con pulso -->
+                <div class="location-pulse"></div>
+                <!-- Punto central azul -->
+                <div class="location-dot"></div>
+            </div>
+        `;
+
+        userMarker = new mapboxgl.Marker({ element: userElement })
+            .setLngLat([userLocation.lng, userLocation.lat])
+            .addTo(map);
+    }
+
+    function updateListOrdering() {
+        const listContainer = document.querySelector('[data-cafeteria-list]');
+        if (!listContainer) {
+            return;
+        }
+
+        const cardElements = Array.from(listContainer.querySelectorAll('[data-cafeteria-id]'));
+        const cardsById = new Map(cardElements.map(card => [Number(card.dataset.cafeteriaId), card]));
+        const fragment = document.createDocumentFragment();
+
+        orderedCafes.forEach((cafe, index) => {
+            const card = cardsById.get(Number(cafe.id));
+            if (!card) {
+                return;
+            }
+
+            const badge = card.querySelector('[data-order-badge]');
+            if (badge) {
+                badge.textContent = index + 1;
+            }
+
+            fragment.appendChild(card);
+        });
+
+        listContainer.appendChild(fragment);
+    }
+
+    function requestUserLocation() {
+        if (!('geolocation' in navigator)) {
+            return;
+        }
+
+        navigator.geolocation.watchPosition(
+            (position) => {
+                const hadPreviousLocation = Boolean(userLocation);
+                userLocation = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude,
+                };
+                orderedCafes = reorderByProximity(userLocation, cafeteriasRaw);
+                if (!hadPreviousLocation) {
+                    shouldFitToRoute = true;
+                }
+                renderRouteAndMarkers({ shouldFit: !hadPreviousLocation });
+            },
+            (error) => {
+                console.warn('No se pudo obtener la ubicación del usuario:', error);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 15000,
+                maximumAge: 5000,
+            }
+        );
+    }
+
+    function reorderByProximity(start, cafes) {
+        const remaining = cafes
+            .filter(cafe => Number.isFinite(cafe.lat) && Number.isFinite(cafe.lng))
+            .map(cafe => ({ ...cafe }));
+        const route = [];
+        let current = { lat: start.lat, lng: start.lng };
+
+        while (remaining.length) {
+            remaining.sort((a, b) => distanceBetween(current, a) - distanceBetween(current, b));
+            const next = remaining.shift();
+            route.push(next);
+            current = { lat: next.lat, lng: next.lng };
+        }
+
+        return route;
+    }
+
+    function distanceBetween(a, b) {
+        const toRadians = (deg) => deg * (Math.PI / 180);
+        const lat1 = toRadians(a.lat);
+        const lat2 = toRadians(b.lat);
+        const deltaLat = toRadians(b.lat - a.lat);
+        const deltaLng = toRadians(b.lng - a.lng);
+        const sinLat = Math.sin(deltaLat / 2);
+        const sinLng = Math.sin(deltaLng / 2);
+        const haversine = sinLat * sinLat + Math.cos(lat1) * Math.cos(lat2) * sinLng * sinLng;
+        const centralAngle = 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
+        const earthRadiusKm = 6371;
+        return earthRadiusKm * centralAngle;
+    }
+
+    async function updateRoute({ shouldFit = false } = {}) {
+        if (!map) {
+            return;
+        }
+
+        const waypointLocations = [];
+
+        if (userLocation && Number.isFinite(userLocation.lat) && Number.isFinite(userLocation.lng)) {
+            waypointLocations.push({ lng: userLocation.lng, lat: userLocation.lat });
+        }
+
+        orderedCafes.forEach((cafe) => {
+            if (Number.isFinite(cafe.lat) && Number.isFinite(cafe.lng)) {
+                waypointLocations.push({ lng: cafe.lng, lat: cafe.lat });
+            }
+        });
+
+        if (waypointLocations.length < 2) {
+            removeRouteLayer();
+            return;
+        }
+
+        const uniqueWaypoints = waypointLocations.filter((point, index, array) => {
+            const precision = 6;
+            const key = `${point.lng.toFixed(precision)},${point.lat.toFixed(precision)}`;
+            return index === array.findIndex(p => `${p.lng.toFixed(precision)},${p.lat.toFixed(precision)}` === key);
+        });
+
+        if (uniqueWaypoints.length < 2) {
+            removeRouteLayer();
+            return;
+        }
+
+        const coordinatesParam = uniqueWaypoints
+            .map(({ lng, lat }) => `${lng.toFixed(6)},${lat.toFixed(6)}`)
+            .join(';');
+
+        const url = `https://api.mapbox.com/directions/v5/mapbox/walking/${coordinatesParam}?alternatives=false&geometries=geojson&overview=full&steps=false&access_token=${MAPBOX_TOKEN}`;
+
+        if (directionsAbortController) {
+            directionsAbortController.abort();
+        }
+        directionsAbortController = new AbortController();
+
+        try {
+            const response = await fetch(url, { signal: directionsAbortController.signal });
+            if (!response.ok) {
+                throw new Error(`Directions error ${response.status}`);
+            }
+            const data = await response.json();
+            const route = data?.routes?.[0];
+            if (!route?.geometry) {
+                throw new Error('Sin geometría de ruta');
+            }
+
+            applyRouteGeoJSON(route.geometry);
+
+            if (shouldFit && Array.isArray(route?.geometry?.coordinates) && route.geometry.coordinates.length) {
+                const bounds = route.geometry.coordinates.reduce((acc, coord) => {
+                    const [lng, lat] = coord;
+                    if (!Number.isFinite(lng) || !Number.isFinite(lat)) {
+                        return acc;
+                    }
+                    return acc.extend([lng, lat]);
+                }, new mapboxgl.LngLatBounds(route.geometry.coordinates[0], route.geometry.coordinates[0]));
+
+                if (bounds && !bounds.isEmpty()) {
+                    map.fitBounds(bounds, { padding: 80, maxZoom: 16, duration: 800 });
+                }
+            }
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                return;
+            }
+            console.warn('Fallo en la ruta con direcciones, usando líneas rectas.', error);
+            renderStraightLineFallback(waypointLocations);
+        }
+    }
+
+    function applyRouteGeoJSON(geometry) {
+        const geojson = {
+            type: 'Feature',
+            properties: {},
+            geometry,
+        };
+
+        if (!map.getSource('route')) {
+            map.addSource('route', {
+                type: 'geojson',
+                data: geojson,
+            });
+
+            map.addLayer({
+                id: 'route',
+                type: 'line',
+                source: 'route',
+                layout: {
+                    'line-join': 'round',
+                    'line-cap': 'round',
+                },
+                paint: {
+                    'line-color': '#2563eb',
+                    'line-width': 5,
+                    'line-opacity': 0.9,
+                },
+            });
+        } else {
+            map.getSource('route').setData(geojson);
+        }
+    }
+
+    function removeRouteLayer() {
+        if (map?.getLayer('route')) {
+            map.removeLayer('route');
+        }
+        if (map?.getSource('route')) {
+            map.removeSource('route');
+        }
+    }
+
+    function renderStraightLineFallback(points) {
+        if (!Array.isArray(points) || points.length < 2) {
+            removeRouteLayer();
+            return;
+        }
+
+        applyRouteGeoJSON({
+            type: 'LineString',
+            coordinates: points.map(({ lng, lat }) => [lng, lat]),
+        });
+    }
+
+    function ensureMapboxStylesheet() {
+        if (!document.querySelector('link[href*="mapbox-gl.css"]')) {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
+            link.crossOrigin = 'anonymous';
+            document.head.appendChild(link);
+        }
+    }
+
+    function loadMapbox() {
+        ensureMapboxStylesheet();
+
+        if (window.mapboxgl) {
+            initMap();
+            return;
+        }
+
+        const existingScript = document.querySelector('script[src*="mapbox-gl-js"]');
+        if (existingScript) {
+            existingScript.addEventListener('load', initMap, { once: true });
+            return;
+        }
+
+        const script = document.createElement('script');
+        script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
+        script.async = true;
+        script.onload = initMap;
+        script.onerror = () => {
+            console.error('No se pudo cargar Mapbox GL JS.');
+            const mapContainer = document.getElementById('map');
+            if (mapContainer) {
+                mapContainer.innerHTML = `
+                    <div class="flex items-center justify-center h-full text-red-500">
+                        <div class="text-center">
+                            <i class="fas fa-exclamation-triangle text-3xl mb-2"></i>
+                            <p>Error al cargar el mapa. Intenta recargar la página.</p>
+                        </div>
+                    </div>
+                `;
+            }
+        };
+        document.head.appendChild(script);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadMapbox);
+    } else {
+        loadMapbox();
+    }
+
     function marcarVisitada(cafeteriaId) {
+        const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (!csrfInput) {
+            alert('No se pudo validar tu sesión. Recarga la página e inténtalo nuevamente.');
+            return;
+        }
+
         fetch(`/mi-recorrido/{{ recorrido_usuario.id }}/visitar/${cafeteriaId}/`, {
             method: 'POST',
             headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-CSRFToken': csrfInput.value,
                 'Content-Type': 'application/json',
             },
         })
@@ -247,22 +696,93 @@
         });
     }
 
-    // Load Mapbox
-    function loadMapbox() {
-        const script = document.createElement('script');
-        script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
-        script.onload = () => {
-            const link = document.createElement('link');
-            link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
-            link.rel = 'stylesheet';
-            document.head.appendChild(link);
-            
-            // Inicializar mapa cuando Mapbox esté cargado
-            initMap();
-        };
-        document.head.appendChild(script);
+    // Función para navegar a una cafetería usando Google Maps
+    function navegarACafeteria(lat, lng) {
+        // Abrir Google Maps con direcciones desde la ubicación actual
+        const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=walking`;
+        window.open(url, '_blank');
     }
-
-    document.addEventListener('DOMContentLoaded', loadMapbox);
 </script>
+
+<style>
+    /* Estilos para el marcador de ubicación actual exacto al del mapa de cafeterías */
+    .user-location-marker-google {
+        background: transparent !important;
+        border: none !important;
+    }
+    
+    .location-marker {
+        position: relative;
+        width: 25px;
+        height: 25px;
+    }
+    
+    .location-pulse {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 25px;
+        height: 25px;
+        background-color: rgba(26, 115, 232, 0.2);
+        border-radius: 50%;
+        animation: googlePulse 1.5s infinite;
+    }
+    
+    .location-dot {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 15px;
+        height: 15px;
+        background-color: #1a73e8;
+        border: 2px solid #ffffff;
+        border-radius: 50%;
+        box-shadow: 0 1px 3px rgba(60,64,67,.3);
+        z-index: 1;
+    }
+    
+    @keyframes googlePulse {
+        0% {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+        }
+        70% {
+            transform: translate(-50%, -50%) scale(3);
+            opacity: 0;
+        }
+        100% {
+            transform: translate(-50%, -50%) scale(3);
+            opacity: 0;
+        }
+    }
+    
+    /* Estilos para el popup de cafeterías */
+    .cafeteria-popup .mapboxgl-popup-content {
+        padding: 0 !important;
+        border-radius: 8px !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+        border: 1px solid #e5e7eb !important;
+    }
+    
+    .cafeteria-popup .mapboxgl-popup-close-button {
+        color: #6b7280 !important;
+        font-size: 18px !important;
+        padding: 8px !important;
+        right: 8px !important;
+        top: 8px !important;
+    }
+    
+    .cafeteria-popup .mapboxgl-popup-close-button:hover {
+        color: #374151 !important;
+        background-color: #f3f4f6 !important;
+        border-radius: 4px !important;
+    }
+    
+    .cafeteria-popup .mapboxgl-popup-tip {
+        border-top-color: #ffffff !important;
+    }
+</style>
+
 {% endblock %}
